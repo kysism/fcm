@@ -1,10 +1,29 @@
 const express = require("express");
 const admin = require("firebase-admin");
 const cors = require("cors");
+const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY,
+);
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+app.post("/register-token", async (req, res) => {
+  const { token } = req.body;
+
+  const { data, error } = await supabase
+    .from("users")
+    .upsert({ fcm_token: token })
+    .select();
+
+  if (error) return res.status(500).send(error);
+
+  res.send(data);
+});
 
 // ==========================
 // 1. Firebase Admin 초기화
