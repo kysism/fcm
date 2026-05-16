@@ -1,15 +1,40 @@
 const supabase = require("../services/supabaseService");
 
-// token 저장 (너 기존 코드 유지 + 확장)
+// ===============================
+// FCM token 업데이트
+// ===============================
 exports.registerToken = async (req, res) => {
-  const { token } = req.body;
+  try {
+    const { phone, token } = req.body;
 
-  const { data, error } = await supabase
-    .from("users")
-    .upsert({ fcm_token: token })
-    .select();
+    if (!phone || !token) {
+      return res.status(400).json({
+        success: false,
+        message: "phone and token are required",
+      });
+    }
 
-  if (error) return res.status(500).send(error);
+    const { data, error } = await supabase
+      .from("users")
+      .update({
+        fcm_token: token,
+        last_token_update: new Date(),
+      })
+      .eq("phone", phone)
+      .select();
 
-  res.send(data);
+    if (error) throw error;
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
 };

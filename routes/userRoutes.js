@@ -3,6 +3,7 @@ const router = express.Router();
 
 const user = require("../controllers/userController");
 
-router.post("/register-token", user.registerToken);
+// FCM token update
+router.post("/token", user.registerToken);
 
 module.exports = router;
