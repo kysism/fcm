@@ -31,7 +31,7 @@ const buildPayload = (title, body, level, extra = {}) => {
   };
 };
 
-const sendToDevice = async (token, title, body, level = 3, data = {}) => {
+const sendToDevice = async (token, title, body, level = "3", data = {}) => {
   return await admin.messaging().send({
     token,
     notification: { title, body },
@@ -43,7 +43,7 @@ const sendToDevice = async (token, title, body, level = 3, data = {}) => {
   });
 };
 
-const sendToTopic = async (topic, title, body, level = 3, data = {}) => {
+const sendToTopic = async (topic, title, body, level = "3", data = {}) => {
   return await admin.messaging().send({
     topic,
     notification: { title, body },
@@ -54,6 +54,7 @@ const sendToTopic = async (topic, title, body, level = 3, data = {}) => {
     android: { priority: "high" },
   });
 };
+
 module.exports = {
   sendToDevice,
   sendToTopic,
