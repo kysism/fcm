@@ -5,8 +5,7 @@ const supabase = require("../services/supabaseService");
 // ===============================
 exports.register = async (req, res) => {
   try {
-    const { name, phone, country_code, region_code, job_code, fcm_token } =
-      req.body;
+    const { name, phone, country_code, region_code, fcm_token } = req.body;
 
     if (!name || !phone) {
       return res.status(400).json({
@@ -37,7 +36,6 @@ exports.register = async (req, res) => {
           phone,
           country_code,
           region_code,
-          job_code,
           fcm_token,
 
           role: "user",
