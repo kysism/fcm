@@ -14,34 +14,20 @@ exports.register = async (req, res) => {
       });
     }
 
-    // 중복 체크
-    const existing = await supabase
-      .from("users")
-      .select("id")
-      .eq("phone", phone)
-      .maybeSingle();
-
-    if (existing.data) {
-      return res.status(409).json({
-        success: false,
-        message: "User already exists",
-      });
-    }
-
     const { data, error } = await supabase
       .from("users")
-      .insert([
+      .upsert(
         {
           name,
           phone,
           country_code,
           region_code,
           fcm_token,
-
           role: "user",
           is_active: true,
         },
-      ])
+        { onConflict: "phone" },
+      )
       .select();
 
     if (error) throw error;
@@ -92,6 +78,37 @@ exports.registerToken = async (req, res) => {
   } catch (err) {
     console.error("TOKEN UPDATE ERROR:", err);
 
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+exports.getUserByToken = async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "token is required",
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("fcm_token", token)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err) {
     return res.status(500).json({
       success: false,
       message: err.message,

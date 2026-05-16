@@ -13,4 +13,9 @@ router.post("/register", user.register);
 // ===============================
 router.post("/token", user.registerToken);
 
+// ===============================
+// FCM TOKEN Register
+// ===============================
+router.get("/", user.getUserByToken);
+
 module.exports = router;
