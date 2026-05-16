@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/user", require("./routes/userRoutes"));
+app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/countries", require("./routes/countryRoutes"));
 app.use("/api/regions", require("./routes/regionRoutes"));
 app.use("/api/fcm", require("./routes/fcmRoutes"));
