@@ -1,18 +1,18 @@
-const supabase = require("../services/supabaseService");
 const { sendToDevice, sendToTopic } = require("../services/firebaseService");
 
 // =====================
-// 단일 Push (기존 /send)
+// DEVICE PUSH
 // =====================
 exports.sendPush = async (req, res) => {
-  const { token, title, body } = req.body;
+  const { token, title, body, level, data } = req.body;
 
   if (!token) {
     return res.status(400).send({ error: "token required" });
   }
 
   try {
-    const result = await sendToDevice(token, title, body);
+    const result = await sendToDevice(token, title, body, level, data || {});
+
     res.send({ success: true, result });
   } catch (err) {
     res.status(500).send({ success: false, error: err.message });
@@ -20,17 +20,18 @@ exports.sendPush = async (req, res) => {
 };
 
 // =====================
-// Topic Push (기존 /send-topic)
+// TOPIC PUSH
 // =====================
 exports.sendTopic = async (req, res) => {
-  const { topic, title, body } = req.body;
+  const { target, title, body, level, data } = req.body;
 
-  if (!topic) {
-    return res.status(400).send({ error: "topic required" });
+  if (!target) {
+    return res.status(400).send({ error: "target required" });
   }
 
   try {
-    const result = await sendToTopic(topic, title, body);
+    const result = await sendToTopic(target, title, body, level, data || {});
+
     res.send({ success: true, result });
   } catch (err) {
     res.status(500).send({ success: false, error: err.message });

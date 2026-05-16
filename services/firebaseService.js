@@ -16,19 +16,32 @@ admin.initializeApp({
   }),
 });
 
-const sendToDevice = async (token, title, body) => {
+const buildPayload = (title, body, level, extra = {}) => {
+  return {
+    notification: { title, body },
+    data: {
+      title: title || "",
+      body: body || "",
+      level: String(level ?? 0),
+      ...Object.fromEntries(
+        Object.entries(extra).map(([k, v]) => [k, String(v)]),
+      ),
+    },
+    android: { priority: "high" },
+  };
+};
+
+const sendToDevice = async (token, title, body, level = 0, extra = {}) => {
   return await admin.messaging().send({
     token,
-    notification: { title, body },
-    android: { priority: "high" },
+    ...buildPayload(title, body, level, extra),
   });
 };
 
-const sendToTopic = async (topic, title, body) => {
+const sendToTopic = async (topic, title, body, level = 0, extra = {}) => {
   return await admin.messaging().send({
     topic,
-    notification: { title, body },
-    android: { priority: "high" },
+    ...buildPayload(title, body, level, extra),
   });
 };
 
