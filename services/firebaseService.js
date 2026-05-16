@@ -31,20 +31,29 @@ const buildPayload = (title, body, level, extra = {}) => {
   };
 };
 
-const sendToDevice = async (token, title, body, level = 0, extra = {}) => {
+const sendToDevice = async (token, title, body, level = 3, data = {}) => {
   return await admin.messaging().send({
     token,
-    ...buildPayload(title, body, level, extra),
+    notification: { title, body },
+    data: {
+      level: String(level),
+      ...data,
+    },
+    android: { priority: "high" },
   });
 };
 
-const sendToTopic = async (topic, title, body, level = 0, extra = {}) => {
+const sendToTopic = async (topic, title, body, level = 3, data = {}) => {
   return await admin.messaging().send({
     topic,
-    ...buildPayload(title, body, level, extra),
+    notification: { title, body },
+    data: {
+      level: String(level),
+      ...data,
+    },
+    android: { priority: "high" },
   });
 };
-
 module.exports = {
   sendToDevice,
   sendToTopic,

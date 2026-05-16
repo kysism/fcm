@@ -11,11 +11,17 @@ exports.sendPush = async (req, res) => {
   }
 
   try {
-    const result = await sendToDevice(token, title, body, level, data || {});
+    const result = await sendToDevice(
+      token,
+      title,
+      body,
+      level ?? 3,
+      data ?? {},
+    );
 
-    res.send({ success: true, result });
+    return res.send({ success: true, result });
   } catch (err) {
-    res.status(500).send({ success: false, error: err.message });
+    return res.status(500).send({ success: false, error: err.message });
   }
 };
 
@@ -23,17 +29,23 @@ exports.sendPush = async (req, res) => {
 // TOPIC PUSH
 // =====================
 exports.sendTopic = async (req, res) => {
-  const { target, title, body, level, data } = req.body;
+  const { topic, title, body, level, data } = req.body;
 
-  if (!target) {
-    return res.status(400).send({ error: "target required" });
+  if (!topic) {
+    return res.status(400).send({ error: "topic required" });
   }
 
   try {
-    const result = await sendToTopic(target, title, body, level, data || {});
+    const result = await sendToTopic(
+      topic,
+      title,
+      body,
+      level ?? 3,
+      data ?? {},
+    );
 
-    res.send({ success: true, result });
+    return res.send({ success: true, result });
   } catch (err) {
-    res.status(500).send({ success: false, error: err.message });
+    return res.status(500).send({ success: false, error: err.message });
   }
 };
