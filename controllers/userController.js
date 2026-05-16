@@ -15,9 +15,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    const now = new Date();
-
-    // 중복 체크 (핵심)
+    // 중복 체크
     const existing = await supabase
       .from("users")
       .select("id")
@@ -42,9 +40,6 @@ exports.register = async (req, res) => {
           job_code,
           fcm_token,
 
-          // =========================
-          // SYSTEM DEFAULTS
-          // =========================
           role: "user",
           is_active: true,
         },
@@ -81,12 +76,11 @@ exports.registerToken = async (req, res) => {
       });
     }
 
-    const now = new Date();
-
     const { data, error } = await supabase
       .from("users")
       .update({
         fcm_token: token,
+        last_token_update: new Date(),
       })
       .eq("phone", phone)
       .select();
