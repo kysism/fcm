@@ -17,24 +17,24 @@ admin.initializeApp({
 });
 
 // =============================
-// SEND TO DEVICE
+// SEND RAW HTTP v1 MESSAGE
 // =============================
-const sendToDevice = async (token, title, body, level = 3, data = {}) => {
+const sendRawMessage = async (message) => {
+  return await admin.messaging().send(message);
+};
+
+// =============================
+// WRAPPER (DEVICE)
+// =============================
+const sendToDevice = async (payload) => {
+  const { token, data } = payload.message || payload;
+
   return await admin.messaging().send({
     token,
 
-    // 🚨 notification 완전 제거 (중요)
-    data: {
-      title: String(title || ""),
-      body: String(body || ""),
-      level: String(level),
-
-      click_action: "FLUTTER_NOTIFICATION_CLICK",
-
-      ...Object.fromEntries(
-        Object.entries(data).map(([k, v]) => [k, String(v)]),
-      ),
-    },
+    data: Object.fromEntries(
+      Object.entries(data || {}).map(([k, v]) => [k, String(v)]),
+    ),
 
     android: {
       priority: "high",
@@ -51,21 +51,17 @@ const sendToDevice = async (token, title, body, level = 3, data = {}) => {
 };
 
 // =============================
-// SEND TO TOPIC
+// WRAPPER (TOPIC)
 // =============================
-const sendToTopic = async (topic, title, body, level = 3, data = {}) => {
+const sendToTopic = async (payload) => {
+  const { topic, data } = payload.message || payload;
+
   return await admin.messaging().send({
     topic,
 
-    data: {
-      title: String(title || ""),
-      body: String(body || ""),
-      level: String(level),
-
-      ...Object.fromEntries(
-        Object.entries(data).map(([k, v]) => [k, String(v)]),
-      ),
-    },
+    data: Object.fromEntries(
+      Object.entries(data || {}).map(([k, v]) => [k, String(v)]),
+    ),
 
     android: {
       priority: "high",
@@ -82,6 +78,7 @@ const sendToTopic = async (topic, title, body, level = 3, data = {}) => {
 };
 
 module.exports = {
+  sendRawMessage,
   sendToDevice,
   sendToTopic,
 };
