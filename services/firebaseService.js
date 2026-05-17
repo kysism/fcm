@@ -1,8 +1,5 @@
 const admin = require("firebase-admin");
 
-// ===============================
-// INIT
-// ===============================
 admin.initializeApp({
   credential: admin.credential.cert({
     type: process.env.FIREBASE_TYPE,
@@ -19,78 +16,45 @@ admin.initializeApp({
   }),
 });
 
-// ===============================
-// SAFE DATA BUILDER
-// ===============================
-const buildData = (title, body, level = 3, extra = {}) => {
+const buildPayload = (title, body, level, extra = {}) => {
   return {
-    title: String(title || ""),
-    body: String(body || ""),
-    level: String(level),
-    ...Object.fromEntries(
-      Object.entries(extra || {}).map(([k, v]) => [k, String(v)]),
-    ),
+    notification: { title, body },
+    data: {
+      title: title || "",
+      body: body || "",
+      level: String(level ?? 0),
+      ...Object.fromEntries(
+        Object.entries(extra).map(([k, v]) => [k, String(v)]),
+      ),
+    },
+    android: { priority: "high" },
   };
 };
 
-// ===============================
-// DEVICE PUSH (TOKEN)
-// ===============================
 const sendToDevice = async (token, title, body, level = 3, data = {}) => {
-  try {
-    return await admin.messaging().send({
-      token,
-
-      // ❗ 중요: data-only 방식 (Flutter 완전 제어)
-      data: buildData(title, body, level, data),
-
-      android: {
-        priority: "high",
-        ttl: 3600 * 1000,
-      },
-
-      apns: {
-        headers: {
-          "apns-priority": "10",
-        },
-      },
-    });
-  } catch (err) {
-    console.error("sendToDevice error:", err);
-    throw err;
-  }
+  return await admin.messaging().send({
+    token,
+    notification: { title, body },
+    data: {
+      level: String(level),
+      click_action: "FLUTTER_NOTIFICATION_CLICK",
+      ...data,
+    },
+    android: { priority: "high" },
+  });
 };
 
-// ===============================
-// TOPIC PUSH
-// ===============================
 const sendToTopic = async (topic, title, body, level = 3, data = {}) => {
-  try {
-    return await admin.messaging().send({
-      topic,
-
-      data: buildData(title, body, level, data),
-
-      android: {
-        priority: "high",
-        ttl: 3600 * 1000,
-      },
-
-      apns: {
-        headers: {
-          "apns-priority": "10",
-        },
-      },
-    });
-  } catch (err) {
-    console.error("sendToTopic error:", err);
-    throw err;
-  }
+  return await admin.messaging().send({
+    topic,
+    notification: { title, body },
+    data: {
+      level: String(level),
+      ...data,
+    },
+    android: { priority: "high" },
+  });
 };
-
-// ===============================
-// EXPORT
-// ===============================
 module.exports = {
   sendToDevice,
   sendToTopic,
