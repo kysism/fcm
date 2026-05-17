@@ -27,10 +27,21 @@ const sendRawMessage = async (message) => {
 // WRAPPER (DEVICE)
 // =============================
 const sendToDevice = async (payload) => {
-  const { token, data } = payload.message || payload;
+  const message = payload.message;
+
+  if (!message) {
+    throw new Error("message object required");
+  }
+
+  const token = message.token;
+  const data = message.data;
+
+  if (!token) {
+    throw new Error("token required");
+  }
 
   return await admin.messaging().send({
-    token,
+    token: token,
 
     data: Object.fromEntries(
       Object.entries(data || {}).map(([k, v]) => [k, String(v)]),
@@ -38,14 +49,6 @@ const sendToDevice = async (payload) => {
 
     android: {
       priority: "high",
-    },
-
-    apns: {
-      payload: {
-        aps: {
-          contentAvailable: true,
-        },
-      },
     },
   });
 };
