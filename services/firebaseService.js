@@ -23,10 +23,10 @@ const sendToDevice = async (token, title, body, level = 3, data = {}) => {
   return await admin.messaging().send({
     token,
 
-    // 🚨 notification 제거
+    // 🚨 notification 완전 제거 (중요)
     data: {
-      title: title || "",
-      body: body || "",
+      title: String(title || ""),
+      body: String(body || ""),
       level: String(level),
 
       click_action: "FLUTTER_NOTIFICATION_CLICK",
@@ -57,10 +57,9 @@ const sendToTopic = async (topic, title, body, level = 3, data = {}) => {
   return await admin.messaging().send({
     topic,
 
-    // 🚨 notification 제거
     data: {
-      title: title || "",
-      body: body || "",
+      title: String(title || ""),
+      body: String(body || ""),
       level: String(level),
 
       ...Object.fromEntries(
