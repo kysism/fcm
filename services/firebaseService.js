@@ -43,11 +43,19 @@ const sendToDevice = async (payload) => {
   const data = message.data || {};
 
   return await admin.messaging().send({
-    token,
+    token: token,
 
-    data: Object.fromEntries(
-      Object.entries(data).map(([k, v]) => [k, String(v)]),
-    ),
+    // ⭐ 이거 추가 (핵심)
+    notification: {
+      title: data.title,
+      body: data.body,
+    },
+
+    data: {
+      title: String(data.title || ""),
+      body: String(data.body || ""),
+      level: String(data.level || "3"),
+    },
 
     android: {
       priority: "high",
