@@ -1,5 +1,8 @@
 const admin = require("firebase-admin");
 
+// ===============================
+// INIT
+// ===============================
 admin.initializeApp({
   credential: admin.credential.cert({
     type: process.env.FIREBASE_TYPE,
@@ -16,63 +19,78 @@ admin.initializeApp({
   }),
 });
 
-const buildPayload = (title, body, level, extra = {}) => {
+// ===============================
+// SAFE DATA BUILDER
+// ===============================
+const buildData = (title, body, level = 3, extra = {}) => {
   return {
-    notification: { title, body },
-    data: {
-      title: title || "",
-      body: body || "",
-      level: String(level ?? 0),
-      ...Object.fromEntries(
-        Object.entries(extra).map(([k, v]) => [k, String(v)]),
-      ),
-    },
-    android: { priority: "high" },
+    title: String(title || ""),
+    body: String(body || ""),
+    level: String(level),
+    ...Object.fromEntries(
+      Object.entries(extra || {}).map(([k, v]) => [k, String(v)]),
+    ),
   };
 };
 
+// ===============================
+// DEVICE PUSH (TOKEN)
+// ===============================
 const sendToDevice = async (token, title, body, level = 3, data = {}) => {
-  return await admin.messaging().send({
-    token,
+  try {
+    return await admin.messaging().send({
+      token,
 
-    // ❌ 제거 (중요)
-    // notification: { title, body },
+      // ❗ 중요: data-only 방식 (Flutter 완전 제어)
+      data: buildData(title, body, level, data),
 
-    // ✅ data-only 방식
-    data: {
-      title: title || "",
-      body: body || "",
-      level: String(level),
-      ...Object.fromEntries(
-        Object.entries(data).map(([k, v]) => [k, String(v)]),
-      ),
-    },
+      android: {
+        priority: "high",
+        ttl: 3600 * 1000,
+      },
 
-    android: {
-      priority: "high",
-    },
-  });
+      apns: {
+        headers: {
+          "apns-priority": "10",
+        },
+      },
+    });
+  } catch (err) {
+    console.error("sendToDevice error:", err);
+    throw err;
+  }
 };
 
+// ===============================
+// TOPIC PUSH
+// ===============================
 const sendToTopic = async (topic, title, body, level = 3, data = {}) => {
-  return await admin.messaging().send({
-    topic,
+  try {
+    return await admin.messaging().send({
+      topic,
 
-    data: {
-      title: title || "",
-      body: body || "",
-      level: String(level),
-      ...Object.fromEntries(
-        Object.entries(data).map(([k, v]) => [k, String(v)]),
-      ),
-    },
+      data: buildData(title, body, level, data),
 
-    android: {
-      priority: "high",
-    },
-  });
+      android: {
+        priority: "high",
+        ttl: 3600 * 1000,
+      },
+
+      apns: {
+        headers: {
+          "apns-priority": "10",
+        },
+      },
+    });
+  } catch (err) {
+    console.error("sendToTopic error:", err);
+    throw err;
+  }
 };
 
+// ===============================
+// EXPORT
+// ===============================
 module.exports = {
   sendToDevice,
   sendToTopic,
