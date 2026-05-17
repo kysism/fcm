@@ -37,6 +37,7 @@ const sendToDevice = async (token, title, body, level = 3, data = {}) => {
     notification: { title, body },
     data: {
       level: String(level),
+      click_action: "FLUTTER_NOTIFICATION_CLICK",
       ...data,
     },
     android: { priority: "high" },
