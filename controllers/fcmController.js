@@ -1,51 +1,37 @@
 const { sendToDevice, sendToTopic } = require("../services/firebaseService");
 
 // =====================
-// DEVICE PUSH
+// DEVICE PUSH (FIXED)
 // =====================
 exports.sendPush = async (req, res) => {
-  const { token, title, body, level, data } = req.body;
-
-  if (!token) {
-    return res.status(400).send({ error: "token required" });
-  }
-
   try {
-    const result = await sendToDevice(
-      token,
-      title,
-      body,
-      level ?? 3,
-      data ?? {},
-    );
+    const payload = req.body;
+
+    const result = await sendToDevice(payload);
 
     return res.send({ success: true, result });
   } catch (err) {
-    return res.status(500).send({ success: false, error: err.message });
+    return res.status(500).send({
+      success: false,
+      error: err.message,
+    });
   }
 };
 
 // =====================
-// TOPIC PUSH
+// TOPIC PUSH (FIXED)
 // =====================
 exports.sendTopic = async (req, res) => {
-  const { topic, title, body, level, data } = req.body;
-
-  if (!topic) {
-    return res.status(400).send({ error: "topic required" });
-  }
-
   try {
-    const result = await sendToTopic(
-      topic,
-      title,
-      body,
-      level ?? 3,
-      data ?? {},
-    );
+    const payload = req.body;
+
+    const result = await sendToTopic(payload);
 
     return res.send({ success: true, result });
   } catch (err) {
-    return res.status(500).send({ success: false, error: err.message });
+    return res.status(500).send({
+      success: false,
+      error: err.message,
+    });
   }
 };

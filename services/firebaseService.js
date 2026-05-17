@@ -1,5 +1,8 @@
 const admin = require("firebase-admin");
 
+// =============================
+// INIT
+// =============================
 admin.initializeApp({
   credential: admin.credential.cert({
     type: process.env.FIREBASE_TYPE,
@@ -17,34 +20,33 @@ admin.initializeApp({
 });
 
 // =============================
-// SEND RAW HTTP v1 MESSAGE
+// EXTRACT MESSAGE (핵심)
 // =============================
-const sendRawMessage = async (message) => {
-  return await admin.messaging().send(message);
+const extractMessage = (payload) => {
+  if (!payload) return null;
+  if (payload.message) return payload.message;
+  return payload;
 };
 
 // =============================
-// WRAPPER (DEVICE)
+// DEVICE SEND (FIXED)
 // =============================
 const sendToDevice = async (payload) => {
-  const message = payload.message;
+  const message = extractMessage(payload);
 
-  if (!message) {
-    throw new Error("message object required");
-  }
-
-  const token = message.token;
-  const data = message.data;
-
-  if (!token) {
+  if (!message?.token) {
+    console.log("INVALID PAYLOAD:", JSON.stringify(payload, null, 2));
     throw new Error("token required");
   }
 
+  const token = message.token;
+  const data = message.data || {};
+
   return await admin.messaging().send({
-    token: token,
+    token,
 
     data: Object.fromEntries(
-      Object.entries(data || {}).map(([k, v]) => [k, String(v)]),
+      Object.entries(data).map(([k, v]) => [k, String(v)]),
     ),
 
     android: {
@@ -54,34 +56,31 @@ const sendToDevice = async (payload) => {
 };
 
 // =============================
-// WRAPPER (TOPIC)
+// TOPIC SEND (FIXED)
 // =============================
 const sendToTopic = async (payload) => {
-  const { topic, data } = payload.message || payload;
+  const message = extractMessage(payload);
+
+  if (!message?.topic) {
+    throw new Error("topic required");
+  }
+
+  const data = message.data || {};
 
   return await admin.messaging().send({
-    topic,
+    topic: message.topic,
 
     data: Object.fromEntries(
-      Object.entries(data || {}).map(([k, v]) => [k, String(v)]),
+      Object.entries(data).map(([k, v]) => [k, String(v)]),
     ),
 
     android: {
       priority: "high",
-    },
-
-    apns: {
-      payload: {
-        aps: {
-          contentAvailable: true,
-        },
-      },
     },
   });
 };
 
 module.exports = {
-  sendRawMessage,
   sendToDevice,
   sendToTopic,
 };
