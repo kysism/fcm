@@ -34,27 +34,45 @@ const buildPayload = (title, body, level, extra = {}) => {
 const sendToDevice = async (token, title, body, level = 3, data = {}) => {
   return await admin.messaging().send({
     token,
-    notification: { title, body },
+
+    // ❌ 제거 (중요)
+    // notification: { title, body },
+
+    // ✅ data-only 방식
     data: {
+      title: title || "",
+      body: body || "",
       level: String(level),
-      click_action: "FLUTTER_NOTIFICATION_CLICK",
-      ...data,
+      ...Object.fromEntries(
+        Object.entries(data).map(([k, v]) => [k, String(v)]),
+      ),
     },
-    android: { priority: "high" },
+
+    android: {
+      priority: "high",
+    },
   });
 };
 
 const sendToTopic = async (topic, title, body, level = 3, data = {}) => {
   return await admin.messaging().send({
     topic,
-    notification: { title, body },
+
     data: {
+      title: title || "",
+      body: body || "",
       level: String(level),
-      ...data,
+      ...Object.fromEntries(
+        Object.entries(data).map(([k, v]) => [k, String(v)]),
+      ),
     },
-    android: { priority: "high" },
+
+    android: {
+      priority: "high",
+    },
   });
 };
+
 module.exports = {
   sendToDevice,
   sendToTopic,
