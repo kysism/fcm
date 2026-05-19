@@ -12,16 +12,7 @@
       .top-bar {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        gap: 10px;
         margin-bottom: 16px;
-      }
-
-      @media (max-width: 768px) {
-        .top-bar {
-          flex-direction: column;
-          align-items: stretch;
-        }
       }
     </style>
   </head>
@@ -30,20 +21,8 @@
     <div class="container">
       <div class="card">
         <div class="top-bar">
-          <h1>Regions Management</h1>
-
-          <a
-            href="/"
-            style="
-              padding: 10px 14px;
-              background: #111827;
-              color: white;
-              border-radius: 10px;
-              text-decoration: none;
-            "
-          >
-            Home
-          </a>
+          <h2>Regions Management</h2>
+          <a href="/">Home</a>
         </div>
 
         <div class="form-grid">
@@ -51,10 +30,16 @@
             <option value="">Select Country</option>
           </select>
 
+          <input
+            id="region_code"
+            maxlength="3"
+            placeholder="Region Code (3 chars)"
+          />
+
           <input id="region_nm" placeholder="Region Name" />
 
-          <button class="btn-primary" onclick="saveRegion()">Save</button>
-          <button class="btn-gray" onclick="resetForm()">Reset</button>
+          <button onclick="saveRegion()">Save</button>
+          <button onclick="resetForm()">Reset</button>
         </div>
       </div>
 
@@ -63,6 +48,7 @@
           <thead>
             <tr>
               <th>#</th>
+              <th>Code</th>
               <th>Country</th>
               <th>Region</th>
               <th>Action</th>
@@ -77,16 +63,15 @@
     <script>
       const API = "/api/regions";
       const COUNTRY_API = "/api/countries";
+      const CHECK_API = "/api/regions/check"; // ⭐ 추가
 
       let countries = [];
       let regions = [];
+      let currentCountry = "";
 
-      let editId = null;
-      let currentCountry = null;
-
-      // =========================
+      // =====================
       // INIT
-      // =========================
+      // =====================
       document.addEventListener("DOMContentLoaded", async () => {
         await loadCountries();
 
@@ -98,9 +83,9 @@
           });
       });
 
-      // =========================
-      // LOAD COUNTRIES
-      // =========================
+      // =====================
+      // COUNTRIES
+      // =====================
       async function loadCountries() {
         const res = await fetch(COUNTRY_API);
         const result = await res.json();
@@ -115,9 +100,9 @@
         });
       }
 
-      // =========================
-      // LOAD REGIONS (BY COUNTRY)
-      // =========================
+      // =====================
+      // REGIONS LOAD
+      // =====================
       async function loadRegions(country_code) {
         if (!country_code) {
           regions = [];
@@ -132,60 +117,68 @@
         render();
       }
 
-      // =========================
-      // SAVE (CREATE / UPDATE)
-      // =========================
+      // =====================
+      // SAVE + DUP CHECK
+      // =====================
       async function saveRegion() {
         const country_code = document.getElementById("country_id").value;
+        const code = document
+          .getElementById("region_code")
+          .value.trim()
+          .toUpperCase();
         const name = document.getElementById("region_nm").value.trim();
 
-        if (!country_code || !name) {
-          alert("country & region required");
+        if (!country_code || !code || !name) {
+          alert("All fields required");
           return;
         }
 
-        try {
-          let res;
-
-          if (editId) {
-            res = await fetch(`${API}/${editId}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name }),
-            });
-          } else {
-            res = await fetch(API, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                country_code,
-                name,
-              }),
-            });
-          }
-
-          const result = await res.json();
-
-          if (!result.success) throw new Error(result.message);
-
-          resetForm();
-          loadRegions(country_code);
-        } catch (err) {
-          alert(err.message);
+        if (code.length !== 3) {
+          alert("Code must be 3 characters");
+          return;
         }
+
+        // ⭐ 중복 체크
+        const checkRes = await fetch(`${CHECK_API}?code=${code}`);
+        const check = await checkRes.json();
+
+        if (check.exists) {
+          alert("Code already exists!");
+          return;
+        }
+
+        const res = await fetch(API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code,
+            country_code,
+            name,
+          }),
+        });
+
+        const result = await res.json();
+
+        if (!result.success) {
+          alert(result.message);
+          return;
+        }
+
+        resetForm();
+        loadRegions(country_code);
       }
 
-      // =========================
+      // =====================
       // DELETE
-      // =========================
-      async function deleteRegion(id) {
-        await fetch(`${API}/${id}`, { method: "DELETE" });
+      // =====================
+      async function del(code) {
+        await fetch(`${API}/${code}`, { method: "DELETE" });
         loadRegions(currentCountry);
       }
 
-      // =========================
+      // =====================
       // RENDER
-      // =========================
+      // =====================
       function render() {
         let html = "";
 
@@ -195,10 +188,11 @@
           html += `
             <tr>
               <td>${i + 1}</td>
+              <td>${r.code}</td>
               <td>${c ? c.name : "-"}</td>
               <td>${r.name}</td>
               <td>
-                <button onclick="deleteRegion('${r.code}')">Delete</button>
+                <button onclick="del('${r.code}')">Delete</button>
               </td>
             </tr>
           `;
@@ -207,11 +201,8 @@
         document.getElementById("regionBody").innerHTML = html;
       }
 
-      // =========================
-      // RESET
-      // =========================
       function resetForm() {
-        editId = null;
+        document.getElementById("region_code").value = "";
         document.getElementById("region_nm").value = "";
       }
     </script>

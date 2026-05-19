@@ -1,38 +1,23 @@
 const supabase = require("../services/supabaseService");
 
 // =========================
-// GET (BY COUNTRY)
+// GET BY COUNTRY
 // =========================
 exports.getRegions = async (req, res) => {
   try {
     const { country_code } = req.query;
 
-    if (!country_code) {
-      return res.status(400).json({
-        success: false,
-        message: "country_code is required",
-      });
-    }
-
     const { data, error } = await supabase
       .from("regions")
       .select("*")
       .eq("country_code", country_code)
-      .order("name", { ascending: true });
+      .order("name");
 
     if (error) throw error;
 
-    res.json({
-      success: true,
-      data,
-    });
+    res.json({ success: true, data });
   } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -41,33 +26,46 @@ exports.getRegions = async (req, res) => {
 // =========================
 exports.createRegion = async (req, res) => {
   try {
-    const { country_code, name } = req.body;
+    const { code, country_code, name } = req.body;
 
-    if (!country_code || !name) {
+    if (!code || !country_code || !name) {
       return res.status(400).json({
         success: false,
-        message: "country_code and name required",
+        message: "code, country_code, name required",
+      });
+    }
+
+    if (code.length !== 3) {
+      return res.status(400).json({
+        success: false,
+        message: "code must be 3 characters",
+      });
+    }
+
+    // ⭐ DUP CHECK (server side safety)
+    const exists = await supabase
+      .from("regions")
+      .select("code")
+      .eq("code", code)
+      .maybeSingle();
+
+    if (exists.data) {
+      return res.json({
+        success: false,
+        message: "Code already exists",
       });
     }
 
     const { data, error } = await supabase
       .from("regions")
-      .insert([{ country_code, name }])
+      .insert([{ code, country_code, name }])
       .select();
 
     if (error) throw error;
 
-    res.json({
-      success: true,
-      data,
-    });
+    res.json({ success: true, data });
   } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -87,17 +85,9 @@ exports.updateRegion = async (req, res) => {
 
     if (error) throw error;
 
-    res.json({
-      success: true,
-      data,
-    });
+    res.json({ success: true, data });
   } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -112,15 +102,36 @@ exports.deleteRegion = async (req, res) => {
 
     if (error) throw error;
 
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// =========================
+// DUP CHECK API (NEW)
+// =========================
+exports.checkRegionCode = async (req, res) => {
+  try {
+    const { code } = req.query;
+
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: "code required",
+      });
+    }
+
+    const { data } = await supabase
+      .from("regions")
+      .select("code")
+      .eq("code", code)
+      .maybeSingle();
+
     res.json({
-      success: true,
+      exists: !!data,
     });
   } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
