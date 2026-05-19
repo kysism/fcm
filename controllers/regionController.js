@@ -72,22 +72,28 @@ exports.createRegion = async (req, res) => {
 // =========================
 // UPDATE
 // =========================
-exports.updateRegion = async (req, res) => {
+exports.updateCountry = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { code } = req.params;
     const { name } = req.body;
 
     const { data, error } = await supabase
-      .from("regions")
+      .from("countries")
       .update({ name })
-      .eq("code", id)
+      .eq("code", code)
       .select();
 
     if (error) throw error;
 
-    res.json({ success: true, data });
+    return res.json({
+      success: true,
+      data,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
