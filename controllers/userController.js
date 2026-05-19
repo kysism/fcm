@@ -143,8 +143,6 @@ exports.getUsers = async (req, res) => {
       data,
     });
   } catch (err) {
-    console.error(err);
-
     return res.status(500).json({
       success: false,
       message: err.message,
