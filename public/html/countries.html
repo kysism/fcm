@@ -36,6 +36,34 @@
         background: #e74c3c;
         color: white;
       }
+
+      .mobile-card {
+        display: none;
+      }
+
+      .country-box {
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fafafa;
+      }
+
+      .small {
+        font-size: 12px;
+        opacity: 0.75;
+        margin-top: 4px;
+      }
+
+      @media (max-width: 768px) {
+        table {
+          display: none;
+        }
+
+        .mobile-card {
+          display: block;
+        }
+      }
     </style>
   </head>
 
@@ -74,11 +102,13 @@
             placeholder="Country Code | رمز الدولة"
           />
 
-          <button class="btn-primary" onclick="saveCountry()">
+          <button type="button" class="btn-primary" onclick="saveCountry()">
             Save Country | 저장
           </button>
 
-          <button class="btn-gray" onclick="resetForm()">Reset | 초기화</button>
+          <button type="button" class="btn-gray" onclick="resetForm()">
+            Reset | 초기화
+          </button>
         </div>
       </div>
 
@@ -98,6 +128,9 @@
             <tbody id="countryBody"></tbody>
           </table>
         </div>
+
+        <!-- MOBILE -->
+        <div id="mobileBody" class="mobile-card"></div>
       </div>
     </div>
 
@@ -105,7 +138,22 @@
       const API = "/api/countries";
 
       let countries = [];
+
       let editCode = null;
+
+      let saving = false;
+
+      // =========================
+      // ESCAPE HTML
+      // =========================
+      function escapeHtml(str = "") {
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
 
       // =========================
       // LOAD
@@ -114,6 +162,10 @@
         try {
           const res = await fetch(API);
 
+          if (!res.ok) {
+            throw new Error("API Load Failed");
+          }
+
           const result = await res.json();
 
           countries = result.data || [];
@@ -121,7 +173,8 @@
           render();
         } catch (err) {
           console.error(err);
-          alert("Load Error");
+
+          alert(err.message || "Load Error");
         }
       }
 
@@ -131,54 +184,116 @@
       function render() {
         let html = "";
 
+        let mobileHtml = "";
+
+        if (countries.length === 0) {
+          html = `
+            <tr>
+              <td colspan="4" style="text-align:center;">
+                No Data
+              </td>
+            </tr>
+          `;
+
+          mobileHtml = `
+            <div class="country-box">
+              No Data
+            </div>
+          `;
+        }
+
         countries.forEach((c, i) => {
+          const safeName = escapeHtml(c.name || "");
+          const safeCode = escapeHtml(c.code || "");
+
           html += `
             <tr>
               <td>${i + 1}</td>
 
-              <td>${c.name}</td>
+              <td>${safeName}</td>
 
-              <td>${c.code}</td>
+              <td>${safeCode}</td>
 
               <td>
                 <button
+                  type="button"
                   class="edit-btn"
-                  onclick="editCountry('${c.code}', '${c.name}')"
+                  onclick="editCountry('${safeCode}', '${safeName}')"
                 >
                   Edit
                 </button>
 
                 <button
+                  type="button"
                   class="delete-btn"
-                  onclick="deleteCountry('${c.code}')"
+                  onclick="deleteCountry('${safeCode}')"
                 >
                   Delete
                 </button>
               </td>
             </tr>
           `;
+
+          mobileHtml += `
+            <div class="country-box">
+              <b>${safeName}</b>
+
+              <div class="small">
+                🌍 Code : ${safeCode}
+              </div>
+
+              <div style="margin-top:10px;">
+                <button
+                  type="button"
+                  class="edit-btn"
+                  onclick="editCountry('${safeCode}', '${safeName}')"
+                >
+                  Edit
+                </button>
+
+                <button
+                  type="button"
+                  class="delete-btn"
+                  onclick="deleteCountry('${safeCode}')"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          `;
         });
 
         document.getElementById("countryBody").innerHTML = html;
+
+        document.getElementById("mobileBody").innerHTML = mobileHtml;
       }
 
       // =========================
       // SAVE
       // =========================
       async function saveCountry() {
-        const name = document.getElementById("country_nm").value;
+        if (saving) return;
 
-        const code = document.getElementById("country_code").value;
+        const name = document.getElementById("country_nm").value.trim();
+
+        const code = document
+          .getElementById("country_code")
+          .value.trim()
+          .toUpperCase();
 
         if (!name || !code) {
-          alert("Input Required");
+          alert("Country name and code are required");
           return;
         }
 
+        saving = true;
+
         try {
+          let response;
+
           // UPDATE
           if (editCode) {
-            await fetch(`${API}/${editCode}`, {
+            response = await fetch(`${API}/${editCode}`, {
               method: "PUT",
 
               headers: {
@@ -193,7 +308,7 @@
 
           // INSERT
           else {
-            await fetch(API, {
+            response = await fetch(API, {
               method: "POST",
 
               headers: {
@@ -207,13 +322,23 @@
             });
           }
 
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || "Save failed");
+          }
+
+          alert("Saved successfully");
+
           resetForm();
 
-          loadCountries();
+          await loadCountries();
         } catch (err) {
           console.error(err);
 
-          alert("Save Error");
+          alert(err.message || "Save Error");
+        } finally {
+          saving = false;
         }
       }
 
@@ -237,15 +362,27 @@
         if (!confirm("Delete this country?")) return;
 
         try {
-          await fetch(`${API}/${code}`, {
+          const response = await fetch(`${API}/${code}`, {
             method: "DELETE",
           });
 
-          loadCountries();
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || "Delete failed");
+          }
+
+          alert("Deleted successfully");
+
+          await loadCountries();
+
+          if (editCode === code) {
+            resetForm();
+          }
         } catch (err) {
           console.error(err);
 
-          alert("Delete Error");
+          alert(err.message || "Delete Error");
         }
       }
 
