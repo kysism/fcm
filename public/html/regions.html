@@ -2,7 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Regions Management</title>
 
     <link rel="stylesheet" href="/css/style.css" />
@@ -15,6 +17,16 @@
         align-items: center;
         gap: 10px;
         margin-bottom: 16px;
+      }
+
+      .edit-btn {
+        background: #f39c12;
+        color: white;
+      }
+
+      .delete-btn {
+        background: #e74c3c;
+        color: white;
       }
 
       @media (max-width: 768px) {
@@ -49,24 +61,19 @@
         </div>
 
         <div class="form-grid">
-          <!-- COUNTRY SELECT -->
-          <select id="country_id">
-            <option value="">Select Country | اختر الدولة</option>
+          <select id="country_code">
+            <option value="">Select Country</option>
           </select>
 
-          <input
-            id="region_nm"
-            type="text"
-            placeholder="Region Name | اسم المنطقة"
-          />
+          <input id="region_code" type="text" placeholder="Region Code" />
+
+          <input id="region_nm" type="text" placeholder="Region Name" />
 
           <button class="btn-primary" onclick="saveRegion()">
-            Add Region | إضافة منطقة
+            Save Region
           </button>
 
-          <button class="btn-gray" onclick="resetForm()">
-            Reset | إعادة ضبط
-          </button>
+          <button class="btn-gray" onclick="resetForm()">Reset</button>
         </div>
       </div>
 
@@ -77,8 +84,9 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Country | الدولة</th>
-                <th>Region | المنطقة</th>
+                <th>Country</th>
+                <th>Region</th>
+                <th>Code</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -89,59 +97,231 @@
       </div>
     </div>
 
-    <script type="module">
+    <script>
+      const COUNTRY_API = "/api/countries";
+
+      const REGION_API = "/api/regions";
+
       let countries = [];
 
       let regions = [];
 
-      function initCountry() {
-        const sel = document.getElementById("country_id");
+      let editCode = null;
 
-        countries.forEach((c) => {
-          sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-        });
+      // =========================
+      // LOAD COUNTRIES
+      // =========================
+      async function loadCountries() {
+        try {
+          const res = await fetch(COUNTRY_API);
+
+          const result = await res.json();
+
+          countries = result.data || [];
+
+          const sel = document.getElementById("country_code");
+
+          sel.innerHTML =
+            `<option value="">Select Country</option>` +
+            countries
+              .map((c) => `<option value="${c.code}">${c.name}</option>`)
+              .join("");
+        } catch (err) {
+          console.error(err);
+        }
       }
 
+      // =========================
+      // LOAD REGIONS
+      // =========================
+      async function loadRegions() {
+        try {
+          const res = await fetch(REGION_API);
+
+          const result = await res.json();
+
+          regions = result.data || [];
+
+          render();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      // =========================
+      // RENDER
+      // =========================
       function render() {
         let html = "";
 
         regions.forEach((r, i) => {
-          const c = countries.find((x) => x.id == r.country_id);
+          const country = countries.find((c) => c.code === r.country_code);
 
           html += `
-      <tr>
-        <td>${i + 1}</td>
-        <td>${c ? c.name : "-"}</td>
-        <td>${r.name}</td>
-        <td>
-          <button onclick="del(${i})">Delete</button>
-        </td>
-      </tr>
-    `;
+            <tr>
+              <td>${i + 1}</td>
+
+              <td>${country ? country.name : "-"}</td>
+
+              <td>${r.name}</td>
+
+              <td>${r.code}</td>
+
+              <td>
+                <button
+                  class="edit-btn"
+                  onclick="editRegion(
+                    '${r.code}',
+                    '${r.country_code}',
+                    '${r.name}'
+                  )"
+                >
+                  Edit
+                </button>
+
+                <button
+                  class="delete-btn"
+                  onclick="deleteRegion('${r.code}')"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          `;
         });
 
         document.getElementById("regionBody").innerHTML = html;
       }
 
-      window.saveRegion = function () {
-        const country_id = document.getElementById("country_id").value;
-        const name = document.getElementById("region_nm").value;
+      // =========================
+      // SAVE
+      // =========================
+      async function saveRegion() {
+        const code = document
+          .getElementById("region_code")
+          .value.trim()
+          .toUpperCase();
 
-        regions.push({ country_id, name });
-        render();
-      };
+        const country_code = document.getElementById("country_code").value;
 
-      window.resetForm = function () {
+        const name = document.getElementById("region_nm").value.trim();
+
+        if (!code || !country_code || !name) {
+          alert("All fields required");
+          return;
+        }
+
+        try {
+          let response;
+
+          // UPDATE
+          if (editCode) {
+            response = await fetch(`${REGION_API}/${editCode}`, {
+              method: "PUT",
+
+              headers: {
+                "Content-Type": "application/json",
+              },
+
+              body: JSON.stringify({
+                country_code,
+                name,
+              }),
+            });
+          }
+
+          // INSERT
+          else {
+            response = await fetch(REGION_API, {
+              method: "POST",
+
+              headers: {
+                "Content-Type": "application/json",
+              },
+
+              body: JSON.stringify({
+                code,
+                country_code,
+                name,
+              }),
+            });
+          }
+
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.message);
+          }
+
+          alert("Saved");
+
+          resetForm();
+
+          loadRegions();
+        } catch (err) {
+          console.error(err);
+
+          alert(err.message);
+        }
+      }
+
+      // =========================
+      // EDIT
+      // =========================
+      function editRegion(code, countryCode, name) {
+        editCode = code;
+
+        document.getElementById("region_code").value = code;
+
+        document.getElementById("country_code").value = countryCode;
+
+        document.getElementById("region_nm").value = name;
+      }
+
+      // =========================
+      // DELETE
+      // =========================
+      async function deleteRegion(code) {
+        if (!confirm("Delete region?")) return;
+
+        try {
+          const response = await fetch(`${REGION_API}/${code}`, {
+            method: "DELETE",
+          });
+
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.message);
+          }
+
+          alert("Deleted");
+
+          loadRegions();
+        } catch (err) {
+          console.error(err);
+
+          alert(err.message);
+        }
+      }
+
+      // =========================
+      // RESET
+      // =========================
+      function resetForm() {
+        editCode = null;
+
+        document.getElementById("region_code").value = "";
+
+        document.getElementById("country_code").value = "";
+
         document.getElementById("region_nm").value = "";
-      };
+      }
 
-      window.del = function (i) {
-        regions.splice(i, 1);
-        render();
-      };
+      // INIT
+      loadCountries();
 
-      initCountry();
-      render();
+      loadRegions();
     </script>
   </body>
 </html>
