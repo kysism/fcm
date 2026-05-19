@@ -163,13 +163,12 @@
     <div class="container">
       <!-- NAV -->
       <div class="card nav">
-        <button class="btn-nav">👥 Users</button>
-
-        <button class="btn-nav">📡 Logs</button>
-
-        <button class="btn-nav">⚙ Countries</button>
-
-        <button class="btn-nav">⚙ Regions</button>
+        <button class="btn-nav" onclick="go('user_view.html')">👥 Users</button>
+        <button class="btn-nav" onclick="go('push_logs.html')">📡 Logs</button>
+        <button class="btn-nav" onclick="go('countries.html')">
+          ⚙ Countries
+        </button>
+        <button class="btn-nav" onclick="go('regions.html')">⚙ Regions</button>
       </div>
 
       <!-- COUNTRY -->
@@ -404,6 +403,10 @@
       }
 
       loadCountries();
+
+      function go(page) {
+        location.href = page;
+      }
     </script>
   </body>
 </html>
