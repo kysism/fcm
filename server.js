@@ -6,6 +6,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.sendFile(path.resolve("public/index.html"));
+});
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/countries", require("./routes/countryRoutes"));
 app.use("/api/regions", require("./routes/regionRoutes"));
