@@ -2,7 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Countries Management</title>
 
     <link rel="stylesheet" href="/css/style.css" />
@@ -22,6 +24,17 @@
           flex-direction: column;
           align-items: stretch;
         }
+      }
+
+      .edit-btn {
+        background: #f39c12;
+        color: white;
+        margin-right: 5px;
+      }
+
+      .delete-btn {
+        background: #e74c3c;
+        color: white;
       }
     </style>
   </head>
@@ -62,12 +75,10 @@
           />
 
           <button class="btn-primary" onclick="saveCountry()">
-            Add Country | إضافة دولة
+            Save Country | 저장
           </button>
 
-          <button class="btn-gray" onclick="resetForm()">
-            Reset | إعادة ضبط
-          </button>
+          <button class="btn-gray" onclick="resetForm()">Reset | 초기화</button>
         </div>
       </div>
 
@@ -78,60 +89,181 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Country | الدولة</th>
-                <th>Code | الرمز</th>
-                <th>Action | الإجراءات</th>
+                <th>Country</th>
+                <th>Code</th>
+                <th>Action</th>
               </tr>
             </thead>
 
             <tbody id="countryBody"></tbody>
           </table>
         </div>
-
-        <div id="mobileCountryBody" class="mobile-card"></div>
       </div>
     </div>
 
-    <script type="module">
-      let countries = [];
+    <script>
+      const API = "/api/countries";
 
+      let countries = [];
+      let editCode = null;
+
+      // =========================
+      // LOAD
+      // =========================
+      async function loadCountries() {
+        try {
+          const res = await fetch(API);
+
+          const result = await res.json();
+
+          countries = result.data || [];
+
+          render();
+        } catch (err) {
+          console.error(err);
+          alert("Load Error");
+        }
+      }
+
+      // =========================
+      // RENDER
+      // =========================
       function render() {
         let html = "";
+
         countries.forEach((c, i) => {
           html += `
-      <tr>
-        <td>${i + 1}</td>
-        <td>${c.name}</td>
-        <td>${c.code}</td>
-        <td>
-          <button onclick="del(${i})">Delete</button>
-        </td>
-      </tr>
-    `;
+            <tr>
+              <td>${i + 1}</td>
+
+              <td>${c.name}</td>
+
+              <td>${c.code}</td>
+
+              <td>
+                <button
+                  class="edit-btn"
+                  onclick="editCountry('${c.code}', '${c.name}')"
+                >
+                  Edit
+                </button>
+
+                <button
+                  class="delete-btn"
+                  onclick="deleteCountry('${c.code}')"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          `;
         });
 
         document.getElementById("countryBody").innerHTML = html;
       }
 
-      window.saveCountry = function () {
+      // =========================
+      // SAVE
+      // =========================
+      async function saveCountry() {
         const name = document.getElementById("country_nm").value;
+
         const code = document.getElementById("country_code").value;
 
-        countries.push({ name, code });
-        render();
-      };
+        if (!name || !code) {
+          alert("Input Required");
+          return;
+        }
 
-      window.resetForm = function () {
+        try {
+          // UPDATE
+          if (editCode) {
+            await fetch(`${API}/${editCode}`, {
+              method: "PUT",
+
+              headers: {
+                "Content-Type": "application/json",
+              },
+
+              body: JSON.stringify({
+                name,
+              }),
+            });
+          }
+
+          // INSERT
+          else {
+            await fetch(API, {
+              method: "POST",
+
+              headers: {
+                "Content-Type": "application/json",
+              },
+
+              body: JSON.stringify({
+                code,
+                name,
+              }),
+            });
+          }
+
+          resetForm();
+
+          loadCountries();
+        } catch (err) {
+          console.error(err);
+
+          alert("Save Error");
+        }
+      }
+
+      // =========================
+      // EDIT
+      // =========================
+      function editCountry(code, name) {
+        editCode = code;
+
+        document.getElementById("country_code").value = code;
+
+        document.getElementById("country_code").disabled = true;
+
+        document.getElementById("country_nm").value = name;
+      }
+
+      // =========================
+      // DELETE
+      // =========================
+      async function deleteCountry(code) {
+        if (!confirm("Delete this country?")) return;
+
+        try {
+          await fetch(`${API}/${code}`, {
+            method: "DELETE",
+          });
+
+          loadCountries();
+        } catch (err) {
+          console.error(err);
+
+          alert("Delete Error");
+        }
+      }
+
+      // =========================
+      // RESET
+      // =========================
+      function resetForm() {
+        editCode = null;
+
         document.getElementById("country_nm").value = "";
+
         document.getElementById("country_code").value = "";
-      };
 
-      window.del = function (i) {
-        countries.splice(i, 1);
-        render();
-      };
+        document.getElementById("country_code").disabled = false;
+      }
 
-      render();
+      // INIT
+      loadCountries();
     </script>
   </body>
 </html>
