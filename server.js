@@ -5,35 +5,30 @@ const app = express();
 
 app.use(express.json());
 
-/* =========================
-   API ROUTES
-========================= */
+/* API */
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/countries", require("./routes/countryRoutes"));
 app.use("/api/regions", require("./routes/regionRoutes"));
 
-/* =========================
-   STATIC FILES
-========================= */
+/* STATIC */
 app.use(express.static(path.join(__dirname, "public")));
 
-/* =========================
-   ROOT
-========================= */
+/* ROOT */
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "html", "index.html"));
+  res.sendFile(path.join(__dirname, "public/html/index.html"));
 });
 
-/* =========================
-   SAFE FALLBACK (핵심 수정)
-========================= */
+/* SAFE FALLBACK */
 app.use((req, res) => {
   if (req.path.startsWith("/api")) {
-    return res.status(404).json({
-      success: false,
-      message: "API Not Found",
-    });
+    return res.status(404).json({ error: "API Not Found" });
   }
 
-  res.sendFile(path.join(__dirname, "public", "html", "index.html"));
+  res.sendFile(path.join(__dirname, "public/html/index.html"));
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("SERVER RUNNING:", PORT);
 });
