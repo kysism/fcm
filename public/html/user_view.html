@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Users Management</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial;
+        background: #f3f6fb;
+        color: #1f2d3d;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: auto;
+        padding: 20px;
+      }
+
+      .card {
+        background: white;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 15px;
+      }
+
+      /* NAV */
+      .nav {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        padding: 10px 14px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      .btn {
+        background: #1c6ca1;
+        color: white;
+      }
+
+      /* FILTER */
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      input,
+      select {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      /* TABLE */
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .table th,
+      .table td {
+        border-bottom: 1px solid #eee;
+        padding: 10px;
+        text-align: left;
+        font-size: 13px;
+      }
+
+      /* BADGE */
+      .badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: white;
+        font-weight: bold;
+      }
+
+      .user {
+        background: #3498db;
+      }
+
+      .staff {
+        background: #f39c12;
+      }
+
+      .admin {
+        background: #e74c3c;
+      }
+
+      .active {
+        background: #2ecc71;
+      }
+
+      .inactive {
+        background: #bdc3c7;
+      }
+
+      .token-ok {
+        color: #27ae60;
+        font-weight: bold;
+      }
+
+      .token-empty {
+        color: #c0392b;
+        font-weight: bold;
+      }
+
+      /* MOBILE */
+      .mobile-card {
+        display: none;
+      }
+
+      .user-box {
+        padding: 12px;
+        border-radius: 10px;
+        background: #fafafa;
+        margin-bottom: 10px;
+        border: 1px solid #eee;
+      }
+
+      .small {
+        font-size: 12px;
+        opacity: 0.75;
+        margin-top: 4px;
+      }
+
+      @media (max-width: 768px) {
+        .filters {
+          grid-template-columns: 1fr;
+        }
+
+        table {
+          display: none;
+        }
+
+        .mobile-card {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- NAV -->
+      <div class="card nav">
+        <button class="btn" onclick="go('main.html')">← Main</button>
+
+        <button class="btn" onclick="go('logs.html')">📡 Push Logs</button>
+      </div>
+
+      <!-- TITLE -->
+      <div class="card">
+        <h2>👥 Users Management</h2>
+      </div>
+
+      <!-- FILTER -->
+      <div class="card">
+        <div class="filters">
+          <input
+            id="search"
+            placeholder="Search name / phone"
+            onkeyup="render()"
+          />
+
+          <select id="role" onchange="render()">
+            <option value="all">All Role</option>
+            <option value="user">User</option>
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+
+          <select id="active" onchange="render()">
+            <option value="all">All Status</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+
+          <input id="country" placeholder="Country code" onkeyup="render()" />
+        </div>
+      </div>
+
+      <!-- LIST -->
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Role</th>
+              <th>Country</th>
+              <th>Region</th>
+              <th>Active</th>
+              <th>FCM</th>
+              <th>Last Login</th>
+            </tr>
+          </thead>
+
+          <tbody id="body"></tbody>
+        </table>
+
+        <!-- MOBILE -->
+        <div class="mobile-card" id="mobile"></div>
+      </div>
+    </div>
+
+    <script>
+      /* MOCK DATA */
+      let users = [
+        {
+          name: "Ahmed",
+          phone: "010-1111",
+          role: "user",
+          country_code: "EG",
+          region_code: "CAI",
+          is_active: true,
+          fcm_token: "t1",
+          last_login: "2026-05-19",
+        },
+        {
+          name: "Mina",
+          phone: "010-2222",
+          role: "staff",
+          country_code: "EG",
+          region_code: "LUX",
+          is_active: false,
+          fcm_token: "",
+          last_login: "2026-05-18",
+        },
+      ];
+
+      function render() {
+        const search = document.getElementById("search").value.toLowerCase();
+
+        const role = document.getElementById("role").value;
+
+        const active = document.getElementById("active").value;
+
+        const country = document.getElementById("country").value.toLowerCase();
+
+        let filtered = users;
+
+        /* SEARCH */
+        if (search) {
+          filtered = filtered.filter(
+            (u) =>
+              u.name.toLowerCase().includes(search) || u.phone.includes(search),
+          );
+        }
+
+        /* ROLE */
+        if (role !== "all") {
+          filtered = filtered.filter((u) => u.role === role);
+        }
+
+        /* ACTIVE */
+        if (active !== "all") {
+          filtered = filtered.filter((u) => String(u.is_active) === active);
+        }
+
+        /* COUNTRY */
+        if (country) {
+          filtered = filtered.filter((u) =>
+            (u.country_code || "").toLowerCase().includes(country),
+          );
+        }
+
+        /* TABLE */
+        let html = "";
+
+        filtered.forEach((u) => {
+          html += `
+            <tr>
+              <td>${u.name}</td>
+
+              <td>${u.phone}</td>
+
+              <td>
+                <span class="badge ${u.role}">
+                  ${u.role}
+                </span>
+              </td>
+
+              <td>${u.country_code || "-"}</td>
+
+              <td>${u.region_code || "-"}</td>
+
+              <td>
+                <span class="badge ${u.is_active ? "active" : "inactive"}">
+                  ${u.is_active ? "YES" : "NO"}
+                </span>
+              </td>
+
+              <td>
+                <span class="${u.fcm_token ? "token-ok" : "token-empty"}">
+                  ${u.fcm_token ? "CONNECTED" : "EMPTY"}
+                </span>
+              </td>
+
+              <td>${u.last_login || "-"}</td>
+            </tr>
+          `;
+        });
+
+        document.getElementById("body").innerHTML = html;
+
+        /* MOBILE */
+        let mobileHtml = "";
+
+        filtered.forEach((u) => {
+          mobileHtml += `
+            <div class="user-box">
+
+              <b>${u.name}</b>
+
+              <div class="small">📞 ${u.phone}</div>
+
+              <div class="small">
+                👤 Role :
+                <span class="badge ${u.role}">
+                  ${u.role}
+                </span>
+              </div>
+
+              <div class="small">
+                🌍 Country : ${u.country_code || "-"}
+              </div>
+
+              <div class="small">
+                🗺 Region : ${u.region_code || "-"}
+              </div>
+
+              <div class="small">
+                ✅ Active :
+                ${u.is_active ? "YES" : "NO"}
+              </div>
+
+              <div class="small">
+                📡 FCM :
+                ${u.fcm_token ? "CONNECTED" : "EMPTY"}
+              </div>
+
+              <div class="small">
+                🕒 Last Login :
+                ${u.last_login || "-"}
+              </div>
+
+            </div>
+          `;
+        });
+
+        document.getElementById("mobile").innerHTML = mobileHtml;
+      }
+
+      function go(p) {
+        location.href = p;
+      }
+
+      render();
+    </script>
+  </body>
+</html>

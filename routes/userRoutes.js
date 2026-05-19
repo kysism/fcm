@@ -9,6 +9,11 @@ const user = require("../controllers/userController");
 router.post("/register", user.register);
 
 // ===============================
+// USER LIST
+// ===============================
+router.get("/list", user.getUsers);
+
+// ===============================
 // FCM TOKEN UPDATE
 // ===============================
 router.post("/token", user.registerToken);

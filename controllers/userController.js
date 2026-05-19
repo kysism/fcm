@@ -115,3 +115,39 @@ exports.getUserByToken = async (req, res) => {
     });
   }
 };
+
+exports.getUsers = async (req, res) => {
+  try {
+    const { country_code, region_code } = req.query;
+
+    let query = supabase
+      .from("users")
+      .select("*")
+      .neq("role", "admin")
+      .order("name", { ascending: true });
+
+    if (country_code && country_code !== "all") {
+      query = query.eq("country_code", country_code);
+    }
+
+    if (region_code && region_code !== "all") {
+      query = query.eq("region_code", region_code);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};

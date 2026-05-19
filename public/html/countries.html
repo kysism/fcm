@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Countries Management</title>
+
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/admin_style.css" />
+
+    <style>
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      @media (max-width: 768px) {
+        .top-bar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- FORM -->
+      <div class="card">
+        <div class="top-bar">
+          <h1 class="page-title">Countries Management | إدارة الدول</h1>
+
+          <a
+            href="admin_index.html"
+            style="
+              padding: 10px 14px;
+              background: #111827;
+              color: white;
+              border-radius: 10px;
+              text-decoration: none;
+              font-size: 13px;
+            "
+          >
+            Home | الرئيسية
+          </a>
+        </div>
+
+        <div class="form-grid">
+          <input
+            id="country_nm"
+            type="text"
+            placeholder="Country Name | اسم الدولة"
+          />
+
+          <input
+            id="country_code"
+            type="text"
+            placeholder="Country Code | رمز الدولة"
+          />
+
+          <button class="btn-primary" onclick="saveCountry()">
+            Add Country | إضافة دولة
+          </button>
+
+          <button class="btn-gray" onclick="resetForm()">
+            Reset | إعادة ضبط
+          </button>
+        </div>
+      </div>
+
+      <!-- LIST -->
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Country | الدولة</th>
+                <th>Code | الرمز</th>
+                <th>Action | الإجراءات</th>
+              </tr>
+            </thead>
+
+            <tbody id="countryBody"></tbody>
+          </table>
+        </div>
+
+        <div id="mobileCountryBody" class="mobile-card"></div>
+      </div>
+    </div>
+
+    <script type="module">
+      let countries = [];
+
+      function render() {
+        let html = "";
+        countries.forEach((c, i) => {
+          html += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${c.name}</td>
+        <td>${c.code}</td>
+        <td>
+          <button onclick="del(${i})">Delete</button>
+        </td>
+      </tr>
+    `;
+        });
+
+        document.getElementById("countryBody").innerHTML = html;
+      }
+
+      window.saveCountry = function () {
+        const name = document.getElementById("country_nm").value;
+        const code = document.getElementById("country_code").value;
+
+        countries.push({ name, code });
+        render();
+      };
+
+      window.resetForm = function () {
+        document.getElementById("country_nm").value = "";
+        document.getElementById("country_code").value = "";
+      };
+
+      window.del = function (i) {
+        countries.splice(i, 1);
+        render();
+      };
+
+      render();
+    </script>
+  </body>
+</html>

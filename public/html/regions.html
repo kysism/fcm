@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Regions Management</title>
+
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/admin_style.css" />
+
+    <style>
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      @media (max-width: 768px) {
+        .top-bar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- FORM -->
+      <div class="card">
+        <div class="top-bar">
+          <h1 class="page-title">Regions Management | إدارة المناطق</h1>
+
+          <a
+            href="admin_index.html"
+            style="
+              padding: 10px 14px;
+              background: #111827;
+              color: white;
+              border-radius: 10px;
+              text-decoration: none;
+              font-size: 13px;
+            "
+          >
+            Home | الرئيسية
+          </a>
+        </div>
+
+        <div class="form-grid">
+          <!-- COUNTRY SELECT -->
+          <select id="country_id">
+            <option value="">Select Country | اختر الدولة</option>
+          </select>
+
+          <input
+            id="region_nm"
+            type="text"
+            placeholder="Region Name | اسم المنطقة"
+          />
+
+          <button class="btn-primary" onclick="saveRegion()">
+            Add Region | إضافة منطقة
+          </button>
+
+          <button class="btn-gray" onclick="resetForm()">
+            Reset | إعادة ضبط
+          </button>
+        </div>
+      </div>
+
+      <!-- LIST -->
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Country | الدولة</th>
+                <th>Region | المنطقة</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody id="regionBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      let countries = [
+        { id: 1, name: "Egypt" },
+        { id: 2, name: "Kenya" },
+      ];
+
+      let regions = [];
+
+      function initCountry() {
+        const sel = document.getElementById("country_id");
+
+        countries.forEach((c) => {
+          sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        });
+      }
+
+      function render() {
+        let html = "";
+
+        regions.forEach((r, i) => {
+          const c = countries.find((x) => x.id == r.country_id);
+
+          html += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${c ? c.name : "-"}</td>
+        <td>${r.name}</td>
+        <td>
+          <button onclick="del(${i})">Delete</button>
+        </td>
+      </tr>
+    `;
+        });
+
+        document.getElementById("regionBody").innerHTML = html;
+      }
+
+      window.saveRegion = function () {
+        const country_id = document.getElementById("country_id").value;
+        const name = document.getElementById("region_nm").value;
+
+        regions.push({ country_id, name });
+        render();
+      };
+
+      window.resetForm = function () {
+        document.getElementById("region_nm").value = "";
+      };
+
+      window.del = function (i) {
+        regions.splice(i, 1);
+        render();
+      };
+
+      initCountry();
+      render();
+    </script>
+  </body>
+</html>

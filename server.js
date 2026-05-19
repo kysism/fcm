@@ -1,22 +1,32 @@
 const express = require("express");
-const cors = require("cors");
+const path = require("path");
 
 const app = express();
 
-app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+/* =========================
+   1. API ROUTES (먼저)
+========================= */
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/countries", require("./routes/countryRoutes"));
 app.use("/api/regions", require("./routes/regionRoutes"));
-app.use("/api/fcm", require("./routes/fcmRoutes"));
 
-const PORT = process.env.PORT || 3000;
+/* =========================
+   2. STATIC FILES
+========================= */
+app.use(express.static(path.join(__dirname, "public")));
 
-app.listen(PORT, () => {
-  console.log("SERVER RUNNING:", PORT);
+/* =========================
+   3. ROOT PAGE
+========================= */
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "html", "index.html"));
+});
+
+/* =========================
+   4. FALLBACK (맨 마지막)
+========================= */
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "html", "index.html"));
 });
