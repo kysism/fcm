@@ -64,7 +64,7 @@
     <div class="container">
       <!-- NAV -->
       <div class="card nav">
-        <button class="btn" onclick="go('main.html')">← Main</button>
+        <button class="btn" onclick="go('/')">← Main</button>
       </div>
 
       <!-- TITLE -->
@@ -91,22 +91,7 @@
 
     <script>
       /* MOCK LOGS */
-      let logs = [
-        {
-          time: "2026-05-19 10:10",
-          title: "Emergency Alert",
-          body: "Move immediately",
-          level: "1",
-          target: "EG - all staff",
-        },
-        {
-          time: "2026-05-19 11:20",
-          title: "Info",
-          body: "Daily update",
-          level: "3",
-          target: "EG users",
-        },
-      ];
+      let logs = [];
 
       function render() {
         let html = "";

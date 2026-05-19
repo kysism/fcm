@@ -153,7 +153,7 @@
 
   <body>
     <div class="header">
-      <img src="../img/koica.png" />
+      <img src="/img/koica.png" />
 
       <div>Emergency Control Center</div>
 
@@ -163,12 +163,18 @@
     <div class="container">
       <!-- NAV -->
       <div class="card nav">
-        <button class="btn-nav" onclick="go('user_view.html')">👥 Users</button>
-        <button class="btn-nav" onclick="go('push_logs.html')">📡 Logs</button>
-        <button class="btn-nav" onclick="go('countries.html')">
+        <button class="btn-nav" onclick="go('/html/user_view.html')">
+          👥 Users
+        </button>
+        <button class="btn-nav" onclick="go('/html/push_logs.html')">
+          📡 Logs
+        </button>
+        <button class="btn-nav" onclick="go('/html/countries.html')">
           ⚙ Countries
         </button>
-        <button class="btn-nav" onclick="go('regions.html')">⚙ Regions</button>
+        <button class="btn-nav" onclick="go('/html/regions.html')">
+          ⚙ Regions
+        </button>
       </div>
 
       <!-- COUNTRY -->

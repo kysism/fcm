@@ -18,7 +18,7 @@ app.get("/", (req, res) => {
 
 /* STATIC BUT NO INDEX OVERRIDE */
 app.use(
-  express.static(path.join(__dirname, "public/html"), {
+  express.static(path.join(__dirname, "public"), {
     index: false,
   }),
 );

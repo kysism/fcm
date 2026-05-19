@@ -27,7 +27,6 @@
         margin-bottom: 15px;
       }
 
-      /* NAV */
       .nav {
         display: flex;
         gap: 10px;
@@ -50,7 +49,7 @@
       /* FILTER */
       .filters {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 10px;
       }
 
@@ -77,7 +76,6 @@
         font-size: 13px;
       }
 
-      /* BADGE */
       .badge {
         padding: 4px 8px;
         border-radius: 6px;
@@ -89,11 +87,9 @@
       .user {
         background: #3498db;
       }
-
       .staff {
         background: #f39c12;
       }
-
       .admin {
         background: #e74c3c;
       }
@@ -101,7 +97,6 @@
       .active {
         background: #2ecc71;
       }
-
       .inactive {
         background: #bdc3c7;
       }
@@ -110,7 +105,6 @@
         color: #27ae60;
         font-weight: bold;
       }
-
       .token-empty {
         color: #c0392b;
         font-weight: bold;
@@ -155,9 +149,7 @@
     <div class="container">
       <!-- NAV -->
       <div class="card nav">
-        <button class="btn" onclick="go('main.html')">← Main</button>
-
-        <button class="btn" onclick="go('logs.html')">📡 Push Logs</button>
+        <button class="btn" onclick="go('/')">← Main</button>
       </div>
 
       <!-- TITLE -->
@@ -171,23 +163,29 @@
           <input
             id="search"
             placeholder="Search name / phone"
-            onkeyup="render()"
+            oninput="debouncedLoad()"
           />
 
-          <select id="role" onchange="render()">
+          <select id="role" onchange="loadUsers()">
             <option value="all">All Role</option>
             <option value="user">User</option>
             <option value="staff">Staff</option>
             <option value="admin">Admin</option>
           </select>
 
-          <select id="active" onchange="render()">
+          <select id="active" onchange="loadUsers()">
             <option value="all">All Status</option>
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
 
-          <input id="country" placeholder="Country code" onkeyup="render()" />
+          <select id="country" onchange="onCountryChange()">
+            <option value="all">All Country</option>
+          </select>
+
+          <select id="region" onchange="loadUsers()" style="display: none">
+            <option value="all">All Region</option>
+          </select>
         </div>
       </div>
 
@@ -210,104 +208,112 @@
           <tbody id="body"></tbody>
         </table>
 
-        <!-- MOBILE -->
         <div class="mobile-card" id="mobile"></div>
       </div>
     </div>
 
     <script>
-      /* MOCK DATA */
-      let users = [
-        {
-          name: "Ahmed",
-          phone: "010-1111",
-          role: "user",
-          country_code: "EG",
-          region_code: "CAI",
-          is_active: true,
-          fcm_token: "t1",
-          last_login: "2026-05-19",
-        },
-        {
-          name: "Mina",
-          phone: "010-2222",
-          role: "staff",
-          country_code: "EG",
-          region_code: "LUX",
-          is_active: false,
-          fcm_token: "",
-          last_login: "2026-05-18",
-        },
-      ];
+      let users = [];
+      let timer;
 
-      function render() {
-        const search = document.getElementById("search").value.toLowerCase();
+      /* =========================
+         DEBOUNCE SEARCH
+      ========================= */
+      function debouncedLoad() {
+        clearTimeout(timer);
+        timer = setTimeout(loadUsers, 300);
+      }
 
+      /* =========================
+         LOAD COUNTRIES
+      ========================= */
+      async function loadCountries() {
+        const res = await fetch("/api/countries");
+        const json = await res.json();
+
+        const sel = document.getElementById("country");
+        sel.innerHTML = `<option value="all">All Country</option>`;
+
+        json.data.forEach((c) => {
+          sel.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+        });
+      }
+
+      /* =========================
+         COUNTRY CHANGE → REGIONS
+      ========================= */
+      async function onCountryChange() {
+        const country = document.getElementById("country").value;
+        const regionSel = document.getElementById("region");
+
+        if (country === "all") {
+          regionSel.style.display = "none";
+          regionSel.innerHTML = `<option value="all">All Region</option>`;
+          loadUsers();
+          return;
+        }
+
+        const res = await fetch(`/api/regions?country_code=${country}`);
+        const json = await res.json();
+
+        regionSel.style.display = "block";
+        regionSel.innerHTML = `<option value="all">All Region</option>`;
+
+        json.data.forEach((r) => {
+          regionSel.innerHTML += `<option value="${r.code}">${r.name}</option>`;
+        });
+
+        loadUsers();
+      }
+
+      /* =========================
+         LOAD USERS
+      ========================= */
+      async function loadUsers() {
+        const search = document.getElementById("search").value;
         const role = document.getElementById("role").value;
-
         const active = document.getElementById("active").value;
+        const country = document.getElementById("country").value;
+        const region = document.getElementById("region").value;
 
-        const country = document.getElementById("country").value.toLowerCase();
+        const url = new URL("/api/users/list", window.location.origin);
 
-        let filtered = users;
+        url.searchParams.append("country_code", country);
+        url.searchParams.append("region_code", region);
+        url.searchParams.append("role", role);
+        url.searchParams.append("active", active);
+        url.searchParams.append("keyword", search);
 
-        /* SEARCH */
-        if (search) {
-          filtered = filtered.filter(
-            (u) =>
-              u.name.toLowerCase().includes(search) || u.phone.includes(search),
-          );
-        }
+        const res = await fetch(url);
+        const json = await res.json();
 
-        /* ROLE */
-        if (role !== "all") {
-          filtered = filtered.filter((u) => u.role === role);
-        }
+        users = json.data || [];
 
-        /* ACTIVE */
-        if (active !== "all") {
-          filtered = filtered.filter((u) => String(u.is_active) === active);
-        }
+        render();
+      }
 
-        /* COUNTRY */
-        if (country) {
-          filtered = filtered.filter((u) =>
-            (u.country_code || "").toLowerCase().includes(country),
-          );
-        }
-
-        /* TABLE */
+      /* =========================
+         RENDER TABLE + MOBILE
+      ========================= */
+      function render() {
         let html = "";
 
-        filtered.forEach((u) => {
+        users.forEach((u) => {
           html += `
             <tr>
               <td>${u.name}</td>
-
               <td>${u.phone}</td>
-
-              <td>
-                <span class="badge ${u.role}">
-                  ${u.role}
-                </span>
-              </td>
-
+              <td><span class="badge ${u.role}">${u.role}</span></td>
               <td>${u.country_code || "-"}</td>
-
               <td>${u.region_code || "-"}</td>
-
               <td>
                 <span class="badge ${u.is_active ? "active" : "inactive"}">
                   ${u.is_active ? "YES" : "NO"}
                 </span>
               </td>
-
-              <td>
-                <span class="${u.fcm_token ? "token-ok" : "token-empty"}">
-                  ${u.fcm_token ? "CONNECTED" : "EMPTY"}
-                </span>
+              <td class="${u.fcm_token ? "token-ok" : "token-empty"}">
+                ${u.fcm_token ? "CONNECTED" : "EMPTY"}
               </td>
-
               <td>${u.last_login || "-"}</td>
             </tr>
           `;
@@ -315,59 +321,55 @@
 
         document.getElementById("body").innerHTML = html;
 
-        /* MOBILE */
-        let mobileHtml = "";
+        let mobile = "";
 
-        filtered.forEach((u) => {
-          mobileHtml += `
+        users.forEach((u) => {
+          mobile += `
             <div class="user-box">
-
               <b>${u.name}</b>
 
               <div class="small">📞 ${u.phone}</div>
 
               <div class="small">
-                👤 Role :
+                👤 Role:
                 <span class="badge ${u.role}">
                   ${u.role}
                 </span>
               </div>
 
+              <div class="small">🌍 ${u.country_code || "-"}</div>
+              <div class="small">🗺 ${u.region_code || "-"}</div>
+
               <div class="small">
-                🌍 Country : ${u.country_code || "-"}
+                ${u.is_active ? "ACTIVE" : "INACTIVE"}
               </div>
 
               <div class="small">
-                🗺 Region : ${u.region_code || "-"}
-              </div>
-
-              <div class="small">
-                ✅ Active :
-                ${u.is_active ? "YES" : "NO"}
-              </div>
-
-              <div class="small">
-                📡 FCM :
                 ${u.fcm_token ? "CONNECTED" : "EMPTY"}
               </div>
 
-              <div class="small">
-                🕒 Last Login :
-                ${u.last_login || "-"}
-              </div>
-
+              <div class="small">🕒 ${u.last_login || "-"}</div>
             </div>
           `;
         });
 
-        document.getElementById("mobile").innerHTML = mobileHtml;
+        document.getElementById("mobile").innerHTML = mobile;
       }
 
+      /* =========================
+         NAV
+      ========================= */
       function go(p) {
         location.href = p;
       }
 
-      render();
+      /* =========================
+         INIT
+      ========================= */
+      window.onload = async () => {
+        await loadCountries();
+        await loadUsers();
+      };
     </script>
   </body>
 </html>
