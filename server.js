@@ -10,15 +10,15 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/countries", require("./routes/countryRoutes"));
 app.use("/api/regions", require("./routes/regionRoutes"));
 
-/* STATIC */
+/* STATIC FILES */
 app.use(express.static(path.join(__dirname, "public")));
 
-/* ROOT */
+/* ROOT → index.html */
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/html/index.html"));
 });
 
-/* SAFE FALLBACK */
+/* FALLBACK (API 보호 + SPA 지원) */
 app.use((req, res) => {
   if (req.path.startsWith("/api")) {
     return res.status(404).json({ error: "API Not Found" });
@@ -27,8 +27,7 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, "public/html/index.html"));
 });
 
-const PORT = process.env.PORT || 3000;
-
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log("SERVER RUNNING:", PORT);
+  console.log("SERVER RUNNING ON", PORT);
 });
