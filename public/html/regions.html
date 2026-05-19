@@ -23,26 +23,14 @@
           align-items: stretch;
         }
       }
-
-      .edit-btn {
-        background: #f39c12;
-        color: white;
-        margin-right: 5px;
-      }
-
-      .delete-btn {
-        background: #e74c3c;
-        color: white;
-      }
     </style>
   </head>
 
   <body>
     <div class="container">
-      <!-- FORM -->
       <div class="card">
         <div class="top-bar">
-          <h1 class="page-title">Regions Management | إدارة المناطق</h1>
+          <h1>Regions Management</h1>
 
           <a
             href="/"
@@ -52,50 +40,37 @@
               color: white;
               border-radius: 10px;
               text-decoration: none;
-              font-size: 13px;
             "
           >
-            Home | الرئيسية
+            Home
           </a>
         </div>
 
         <div class="form-grid">
-          <!-- COUNTRY -->
-          <select id="country_code" onchange="changeCountry()">
+          <select id="country_id">
             <option value="">Select Country</option>
           </select>
 
-          <!-- REGION CODE -->
-          <input id="region_code" type="text" placeholder="Region Code" />
+          <input id="region_nm" placeholder="Region Name" />
 
-          <!-- REGION NAME -->
-          <input id="region_nm" type="text" placeholder="Region Name" />
-
-          <button class="btn-primary" onclick="saveRegion()">
-            Save Region
-          </button>
-
+          <button class="btn-primary" onclick="saveRegion()">Save</button>
           <button class="btn-gray" onclick="resetForm()">Reset</button>
         </div>
       </div>
 
-      <!-- LIST -->
       <div class="card">
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Country</th>
-                <th>Region</th>
-                <th>Code</th>
-                <th>Action</th>
-              </tr>
-            </thead>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Country</th>
+              <th>Region</th>
+              <th>Action</th>
+            </tr>
+          </thead>
 
-            <tbody id="regionBody"></tbody>
-          </table>
-        </div>
+          <tbody id="regionBody"></tbody>
+        </table>
       </div>
     </div>
 
@@ -105,14 +80,31 @@
 
       let countries = [];
       let regions = [];
+
       let editId = null;
+      let currentCountry = null;
 
       // =========================
-      // INIT COUNTRY
+      // INIT
+      // =========================
+      document.addEventListener("DOMContentLoaded", async () => {
+        await loadCountries();
+
+        document
+          .getElementById("country_id")
+          .addEventListener("change", (e) => {
+            currentCountry = e.target.value;
+            loadRegions(currentCountry);
+          });
+      });
+
+      // =========================
+      // LOAD COUNTRIES
       // =========================
       async function loadCountries() {
         const res = await fetch(COUNTRY_API);
         const result = await res.json();
+
         countries = result.data || [];
 
         const sel = document.getElementById("country_id");
@@ -124,7 +116,7 @@
       }
 
       // =========================
-      // LOAD REGIONS BY COUNTRY
+      // LOAD REGIONS (BY COUNTRY)
       // =========================
       async function loadRegions(country_code) {
         if (!country_code) {
@@ -141,7 +133,7 @@
       }
 
       // =========================
-      // SAVE
+      // SAVE (CREATE / UPDATE)
       // =========================
       async function saveRegion() {
         const country_code = document.getElementById("country_id").value;
@@ -186,10 +178,9 @@
       // =========================
       // DELETE
       // =========================
-      async function del(id) {
+      async function deleteRegion(id) {
         await fetch(`${API}/${id}`, { method: "DELETE" });
-        const country_code = document.getElementById("country_id").value;
-        loadRegions(country_code);
+        loadRegions(currentCountry);
       }
 
       // =========================
@@ -202,26 +193,19 @@
           const c = countries.find((x) => x.code === r.country_code);
 
           html += `
-      <tr>
-        <td>${i + 1}</td>
-        <td>${c ? c.name : "-"}</td>
-        <td>${r.name}</td>
-        <td>
-          <button onclick="del('${r.code}')">Delete</button>
-        </td>
-      </tr>
-    `;
+            <tr>
+              <td>${i + 1}</td>
+              <td>${c ? c.name : "-"}</td>
+              <td>${r.name}</td>
+              <td>
+                <button onclick="deleteRegion('${r.code}')">Delete</button>
+              </td>
+            </tr>
+          `;
         });
 
         document.getElementById("regionBody").innerHTML = html;
       }
-
-      // =========================
-      // EVENT: COUNTRY CHANGE
-      // =========================
-      document.getElementById("country_id").addEventListener("change", (e) => {
-        loadRegions(e.target.value);
-      });
 
       // =========================
       // RESET
@@ -230,9 +214,6 @@
         editId = null;
         document.getElementById("region_nm").value = "";
       }
-
-      // INIT
-      loadCountries();
     </script>
   </body>
 </html>

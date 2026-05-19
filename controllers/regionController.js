@@ -1,43 +1,54 @@
 const supabase = require("../services/supabaseService");
 
-// ===============================
-// GET REGIONS
-// ===============================
+// =========================
+// GET (BY COUNTRY)
+// =========================
 exports.getRegions = async (req, res) => {
   try {
-    const countryCode = req.query.country_code;
+    const { country_code } = req.query;
 
-    let query = supabase
-      .from("regions")
-      .select("*")
-      .order("name", { ascending: true });
-
-    if (countryCode && countryCode !== "all") {
-      query = query.eq("country_code", countryCode);
+    if (!country_code) {
+      return res.status(400).json({
+        success: false,
+        message: "country_code is required",
+      });
     }
 
-    const { data, error } = await query;
+    const { data, error } = await supabase
+      .from("regions")
+      .select("*")
+      .eq("country_code", country_code)
+      .order("name", { ascending: true });
 
     if (error) throw error;
 
-    return res.json({
+    res.json({
       success: true,
       data,
     });
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: err.message,
     });
   }
 };
 
+// =========================
 // CREATE
+// =========================
 exports.createRegion = async (req, res) => {
   try {
     const { country_code, name } = req.body;
+
+    if (!country_code || !name) {
+      return res.status(400).json({
+        success: false,
+        message: "country_code and name required",
+      });
+    }
 
     const { data, error } = await supabase
       .from("regions")
@@ -46,13 +57,23 @@ exports.createRegion = async (req, res) => {
 
     if (error) throw error;
 
-    res.json({ success: true, data });
+    res.json({
+      success: true,
+      data,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
+// =========================
 // UPDATE
+// =========================
 exports.updateRegion = async (req, res) => {
   try {
     const { id } = req.params;
@@ -66,13 +87,23 @@ exports.updateRegion = async (req, res) => {
 
     if (error) throw error;
 
-    res.json({ success: true, data });
+    res.json({
+      success: true,
+      data,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
+// =========================
 // DELETE
+// =========================
 exports.deleteRegion = async (req, res) => {
   try {
     const { id } = req.params;
@@ -81,8 +112,15 @@ exports.deleteRegion = async (req, res) => {
 
     if (error) throw error;
 
-    res.json({ success: true });
+    res.json({
+      success: true,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
