@@ -5,8 +5,11 @@ const app = express();
 
 app.use(express.json());
 
+console.log("USER ROUTE LOADING...");
+console.log("USER ROUTE LOADED");
+
 /* =========================
-   1. API ROUTES (먼저)
+   1. API ROUTES 
 ========================= */
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/countries", require("./routes/countryRoutes"));
