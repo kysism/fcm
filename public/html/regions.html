@@ -2,9 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <title>Regions Management</title>
 
     <link rel="stylesheet" href="/css/style.css" />
@@ -19,21 +17,22 @@
         margin-bottom: 16px;
       }
 
-      .edit-btn {
-        background: #f39c12;
-        color: white;
-      }
-
-      .delete-btn {
-        background: #e74c3c;
-        color: white;
-      }
-
       @media (max-width: 768px) {
         .top-bar {
           flex-direction: column;
           align-items: stretch;
         }
+      }
+
+      .edit-btn {
+        background: #f39c12;
+        color: white;
+        margin-right: 5px;
+      }
+
+      .delete-btn {
+        background: #e74c3c;
+        color: white;
       }
     </style>
   </head>
@@ -61,12 +60,15 @@
         </div>
 
         <div class="form-grid">
-          <select id="country_code">
+          <!-- COUNTRY -->
+          <select id="country_code" onchange="changeCountry()">
             <option value="">Select Country</option>
           </select>
 
+          <!-- REGION CODE -->
           <input id="region_code" type="text" placeholder="Region Code" />
 
+          <!-- REGION NAME -->
           <input id="region_nm" type="text" placeholder="Region Name" />
 
           <button class="btn-primary" onclick="saveRegion()">
@@ -98,54 +100,96 @@
     </div>
 
     <script>
+      const API = "/api/regions";
       const COUNTRY_API = "/api/countries";
 
-      const REGION_API = "/api/regions";
-
       let countries = [];
-
       let regions = [];
-
-      let editCode = null;
+      let editId = null;
 
       // =========================
-      // LOAD COUNTRIES
+      // INIT COUNTRY
       // =========================
       async function loadCountries() {
+        const res = await fetch(COUNTRY_API);
+        const result = await res.json();
+        countries = result.data || [];
+
+        const sel = document.getElementById("country_id");
+        sel.innerHTML = `<option value="">Select Country</option>`;
+
+        countries.forEach((c) => {
+          sel.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+        });
+      }
+
+      // =========================
+      // LOAD REGIONS BY COUNTRY
+      // =========================
+      async function loadRegions(country_code) {
+        if (!country_code) {
+          regions = [];
+          render();
+          return;
+        }
+
+        const res = await fetch(`${API}?country_code=${country_code}`);
+        const result = await res.json();
+
+        regions = result.data || [];
+        render();
+      }
+
+      // =========================
+      // SAVE
+      // =========================
+      async function saveRegion() {
+        const country_code = document.getElementById("country_id").value;
+        const name = document.getElementById("region_nm").value.trim();
+
+        if (!country_code || !name) {
+          alert("country & region required");
+          return;
+        }
+
         try {
-          const res = await fetch(COUNTRY_API);
+          let res;
+
+          if (editId) {
+            res = await fetch(`${API}/${editId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name }),
+            });
+          } else {
+            res = await fetch(API, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                country_code,
+                name,
+              }),
+            });
+          }
 
           const result = await res.json();
 
-          countries = result.data || [];
+          if (!result.success) throw new Error(result.message);
 
-          const sel = document.getElementById("country_code");
-
-          sel.innerHTML =
-            `<option value="">Select Country</option>` +
-            countries
-              .map((c) => `<option value="${c.code}">${c.name}</option>`)
-              .join("");
+          resetForm();
+          loadRegions(country_code);
         } catch (err) {
-          console.error(err);
+          alert(err.message);
         }
       }
 
       // =========================
-      // LOAD REGIONS
+      // DELETE
       // =========================
-      async function loadRegions() {
-        try {
-          const res = await fetch(REGION_API);
-
-          const result = await res.json();
-
-          regions = result.data || [];
-
-          render();
-        } catch (err) {
-          console.error(err);
-        }
+      async function del(id) {
+        await fetch(`${API}/${id}`, { method: "DELETE" });
+        const country_code = document.getElementById("country_id").value;
+        loadRegions(country_code);
       }
 
       // =========================
@@ -155,173 +199,40 @@
         let html = "";
 
         regions.forEach((r, i) => {
-          const country = countries.find((c) => c.code === r.country_code);
+          const c = countries.find((x) => x.code === r.country_code);
 
           html += `
-            <tr>
-              <td>${i + 1}</td>
-
-              <td>${country ? country.name : "-"}</td>
-
-              <td>${r.name}</td>
-
-              <td>${r.code}</td>
-
-              <td>
-                <button
-                  class="edit-btn"
-                  onclick="editRegion(
-                    '${r.code}',
-                    '${r.country_code}',
-                    '${r.name}'
-                  )"
-                >
-                  Edit
-                </button>
-
-                <button
-                  class="delete-btn"
-                  onclick="deleteRegion('${r.code}')"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          `;
+      <tr>
+        <td>${i + 1}</td>
+        <td>${c ? c.name : "-"}</td>
+        <td>${r.name}</td>
+        <td>
+          <button onclick="del('${r.code}')">Delete</button>
+        </td>
+      </tr>
+    `;
         });
 
         document.getElementById("regionBody").innerHTML = html;
       }
 
       // =========================
-      // SAVE
+      // EVENT: COUNTRY CHANGE
       // =========================
-      async function saveRegion() {
-        const code = document
-          .getElementById("region_code")
-          .value.trim()
-          .toUpperCase();
-
-        const country_code = document.getElementById("country_code").value;
-
-        const name = document.getElementById("region_nm").value.trim();
-
-        if (!code || !country_code || !name) {
-          alert("All fields required");
-          return;
-        }
-
-        try {
-          let response;
-
-          // UPDATE
-          if (editCode) {
-            response = await fetch(`${REGION_API}/${editCode}`, {
-              method: "PUT",
-
-              headers: {
-                "Content-Type": "application/json",
-              },
-
-              body: JSON.stringify({
-                country_code,
-                name,
-              }),
-            });
-          }
-
-          // INSERT
-          else {
-            response = await fetch(REGION_API, {
-              method: "POST",
-
-              headers: {
-                "Content-Type": "application/json",
-              },
-
-              body: JSON.stringify({
-                code,
-                country_code,
-                name,
-              }),
-            });
-          }
-
-          const result = await response.json();
-
-          if (!response.ok || !result.success) {
-            throw new Error(result.message);
-          }
-
-          alert("Saved");
-
-          resetForm();
-
-          loadRegions();
-        } catch (err) {
-          console.error(err);
-
-          alert(err.message);
-        }
-      }
-
-      // =========================
-      // EDIT
-      // =========================
-      function editRegion(code, countryCode, name) {
-        editCode = code;
-
-        document.getElementById("region_code").value = code;
-
-        document.getElementById("country_code").value = countryCode;
-
-        document.getElementById("region_nm").value = name;
-      }
-
-      // =========================
-      // DELETE
-      // =========================
-      async function deleteRegion(code) {
-        if (!confirm("Delete region?")) return;
-
-        try {
-          const response = await fetch(`${REGION_API}/${code}`, {
-            method: "DELETE",
-          });
-
-          const result = await response.json();
-
-          if (!response.ok || !result.success) {
-            throw new Error(result.message);
-          }
-
-          alert("Deleted");
-
-          loadRegions();
-        } catch (err) {
-          console.error(err);
-
-          alert(err.message);
-        }
-      }
+      document.getElementById("country_id").addEventListener("change", (e) => {
+        loadRegions(e.target.value);
+      });
 
       // =========================
       // RESET
       // =========================
       function resetForm() {
-        editCode = null;
-
-        document.getElementById("region_code").value = "";
-
-        document.getElementById("country_code").value = "";
-
+        editId = null;
         document.getElementById("region_nm").value = "";
       }
 
       // INIT
       loadCountries();
-
-      loadRegions();
     </script>
   </body>
 </html>

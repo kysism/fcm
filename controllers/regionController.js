@@ -34,102 +34,55 @@ exports.getRegions = async (req, res) => {
   }
 };
 
-// ===============================
-// CREATE REGION
-// ===============================
+// CREATE
 exports.createRegion = async (req, res) => {
   try {
-    const { code, country_code, name } = req.body;
-
-    if (!code || !country_code || !name) {
-      return res.status(400).json({
-        success: false,
-        message: "code, country_code, name are required",
-      });
-    }
+    const { country_code, name } = req.body;
 
     const { data, error } = await supabase
       .from("regions")
-      .insert([
-        {
-          code: code.toUpperCase(),
-          country_code,
-          name,
-        },
-      ])
+      .insert([{ country_code, name }])
       .select();
 
     if (error) throw error;
 
-    return res.json({
-      success: true,
-      data,
-    });
+    res.json({ success: true, data });
   } catch (err) {
-    console.error(err);
-
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// ===============================
-// UPDATE REGION
-// ===============================
+// UPDATE
 exports.updateRegion = async (req, res) => {
   try {
-    const code = req.params.code;
-
-    const { name, country_code } = req.body;
+    const { id } = req.params;
+    const { name } = req.body;
 
     const { data, error } = await supabase
       .from("regions")
-      .update({
-        name,
-        country_code,
-      })
-      .eq("code", code)
+      .update({ name })
+      .eq("code", id)
       .select();
 
     if (error) throw error;
 
-    return res.json({
-      success: true,
-      data,
-    });
+    res.json({ success: true, data });
   } catch (err) {
-    console.error(err);
-
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// ===============================
-// DELETE REGION
-// ===============================
+// DELETE
 exports.deleteRegion = async (req, res) => {
   try {
-    const code = req.params.code;
+    const { id } = req.params;
 
-    const { error } = await supabase.from("regions").delete().eq("code", code);
+    const { error } = await supabase.from("regions").delete().eq("code", id);
 
     if (error) throw error;
 
-    return res.json({
-      success: true,
-      message: "Deleted",
-    });
+    res.json({ success: true });
   } catch (err) {
-    console.error(err);
-
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
