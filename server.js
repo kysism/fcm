@@ -5,31 +5,35 @@ const app = express();
 
 app.use(express.json());
 
-console.log("USER ROUTE LOADING...");
-console.log("USER ROUTE LOADED");
-
 /* =========================
-   1. API ROUTES 
+   API ROUTES
 ========================= */
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/countries", require("./routes/countryRoutes"));
 app.use("/api/regions", require("./routes/regionRoutes"));
 
 /* =========================
-   2. STATIC FILES
+   STATIC FILES
 ========================= */
 app.use(express.static(path.join(__dirname, "public")));
 
 /* =========================
-   3. ROOT PAGE
+   ROOT
 ========================= */
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "html", "index.html"));
 });
 
 /* =========================
-   4. FALLBACK (맨 마지막)
+   SAFE FALLBACK (핵심 수정)
 ========================= */
-app.get("*", (req, res) => {
+app.use((req, res) => {
+  if (req.path.startsWith("/api")) {
+    return res.status(404).json({
+      success: false,
+      message: "API Not Found",
+    });
+  }
+
   res.sendFile(path.join(__dirname, "public", "html", "index.html"));
 });
