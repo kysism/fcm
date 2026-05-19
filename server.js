@@ -9,6 +9,7 @@ app.use(express.json());
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/countries", require("./routes/countryRoutes"));
 app.use("/api/regions", require("./routes/regionRoutes"));
+app.use("/api/fcm", require("./routes/fcmRoutes"));
 
 /* ROOT EXPLICIT */
 app.get("/", (req, res) => {
