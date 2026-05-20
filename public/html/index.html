@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KOICA Emergency System</title>
+    <title>KOICA Emergency Control Center</title>
 
     <style>
       body {
@@ -13,29 +13,37 @@
         color: #1f2d3d;
       }
 
+      /* ================= HEADER (LARGE FIX) ================= */
       .header {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        height: 60px;
+        height: 90px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 20px;
-        background: rgba(255, 255, 255, 0.9);
+        padding: 0 30px;
+        background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         z-index: 1000;
       }
 
       .header img {
-        height: 35px;
+        height: 60px;
       }
 
+      .header-title {
+        font-size: 26px;
+        font-weight: 800;
+        color: #1c6ca1;
+      }
+
+      /* ================= CONTAINER ================= */
       .container {
         max-width: 1100px;
-        margin: 80px auto 40px;
+        margin: 110px auto 40px;
         padding: 20px;
       }
 
@@ -47,6 +55,7 @@
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
       }
 
+      /* ================= NAV RESTORED ================= */
       .nav {
         display: flex;
         gap: 10px;
@@ -67,6 +76,7 @@
         color: white;
       }
 
+      /* ================= FORM ================= */
       select,
       input,
       textarea {
@@ -79,9 +89,9 @@
 
       textarea {
         min-height: 140px;
-        resize: none;
       }
 
+      /* ================= USER LIST ================= */
       .userbox {
         max-height: 300px;
         overflow: auto;
@@ -97,6 +107,7 @@
         border-bottom: 1px solid #eee;
       }
 
+      /* ================= SEND BUTTON ================= */
       .send-big {
         width: 100%;
         min-height: 90px;
@@ -104,7 +115,7 @@
         border-radius: 14px;
         background: linear-gradient(135deg, #e74c3c, #c0392b);
         color: white;
-        font-size: 24px;
+        font-size: 22px;
         font-weight: bold;
         cursor: pointer;
       }
@@ -121,12 +132,12 @@
     <!-- HEADER -->
     <div class="header">
       <img src="/img/koica.png" />
-      <div>Koica Emergency Control Center</div>
+      <div class="header-title">Koica Emergency Control Center</div>
       <div></div>
     </div>
 
     <div class="container">
-      <!-- NAV (완전 복구) -->
+      <!-- NAV (RESTORED) -->
       <div class="card nav">
         <button class="btn-nav" onclick="go('/html/user_view.html')">
           👥 Users
@@ -165,6 +176,7 @@
           <option value="all">전체</option>
           <option value="user">user</option>
           <option value="staff">staff</option>
+          <option value="admin">admin</option>
         </select>
       </div>
 
@@ -175,7 +187,7 @@
         <div class="count-box" id="countBox">총 0명</div>
       </div>
 
-      <!-- PUSH -->
+      <!-- MESSAGE -->
       <div class="card">
         <h3>📡 Push Message</h3>
 
@@ -183,12 +195,13 @@
         <textarea id="body" placeholder="Message"></textarea>
 
         <select id="level">
-          <option value="1">🔴 1</option>
-          <option value="2">🟠 2</option>
-          <option value="3">🟢 3</option>
+          <option value="1">🔴 LEVEL 1</option>
+          <option value="2">🟠 LEVEL 2</option>
+          <option value="3">🟢 LEVEL 3</option>
+          <option value="4">🔵 LEVEL 4</option>
         </select>
 
-        <button class="send-big" onclick="send()">SEND</button>
+        <button class="send-big" onclick="send()">🚨 SEND PUSH</button>
       </div>
     </div>
 
@@ -212,7 +225,6 @@
 
       async function onCountryChange() {
         const country = document.getElementById("country").value;
-
         const regionCard = document.getElementById("regionCard");
         const regionSel = document.getElementById("region");
 
@@ -248,7 +260,6 @@
         const role = document.getElementById("role").value;
 
         const url = new URL(`${API}/users/list`);
-
         url.searchParams.append("country_code", country);
         url.searchParams.append("region_code", region);
         url.searchParams.append("role", role);
@@ -257,19 +268,9 @@
         const json = await res.json();
 
         users = json.data || [];
-        filterRole();
-      }
+        filteredUsers = users;
 
-      function filterRole() {
-        const role = document.getElementById("role").value;
-
-        filteredUsers = [...users];
-
-        if (role !== "all") {
-          filteredUsers = filteredUsers.filter((u) => u.role === role);
-        }
-
-        renderUsers(filteredUsers);
+        renderUsers(users);
       }
 
       function renderUsers(list) {
@@ -281,7 +282,7 @@
         list.forEach((u) => {
           box.innerHTML += `
             <div class="user-item">
-              <span>${u.name} (${u.role}) - ${u.country_code}/${u.region_code}</span>
+              <span>${u.name} (${u.role})</span>
               <input type="checkbox" onchange="toggle('${u.id}')"/>
             </div>
           `;
@@ -321,14 +322,14 @@
         alert("전송 완료");
       }
 
-      function go(page) {
-        location.href = page;
-      }
-
       window.onload = async () => {
         await loadCountries();
         await loadUsers();
       };
+
+      function go(page) {
+        location.href = page;
+      }
     </script>
   </body>
 </html>
