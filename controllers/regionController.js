@@ -7,6 +7,13 @@ exports.getRegions = async (req, res) => {
   try {
     const { country_code } = req.query;
 
+    if (!country_code) {
+      return res.status(400).json({
+        success: false,
+        message: "country_code required",
+      });
+    }
+
     const { data, error } = await supabase
       .from("regions")
       .select("*")
@@ -22,7 +29,7 @@ exports.getRegions = async (req, res) => {
 };
 
 // =========================
-// CREATE
+// CREATE REGION
 // =========================
 exports.createRegion = async (req, res) => {
   try {
@@ -42,14 +49,14 @@ exports.createRegion = async (req, res) => {
       });
     }
 
-    // ⭐ DUP CHECK (server side safety)
-    const exists = await supabase
+    // DUP CHECK
+    const { data: exists } = await supabase
       .from("regions")
       .select("code")
       .eq("code", code)
       .maybeSingle();
 
-    if (exists.data) {
+    if (exists) {
       return res.json({
         success: false,
         message: "Code already exists",
@@ -70,17 +77,20 @@ exports.createRegion = async (req, res) => {
 };
 
 // =========================
-// UPDATE
+// UPDATE REGION
 // =========================
-exports.updateCountry = async (req, res) => {
+exports.updateRegion = async (req, res) => {
   try {
-    const { code } = req.params;
-    const { name } = req.body;
+    const { id } = req.params;
+    const { name, country_code } = req.body;
 
     const { data, error } = await supabase
-      .from("countries")
-      .update({ name })
-      .eq("code", code)
+      .from("regions")
+      .update({
+        name,
+        country_code,
+      })
+      .eq("code", id)
       .select();
 
     if (error) throw error;
@@ -98,7 +108,7 @@ exports.updateCountry = async (req, res) => {
 };
 
 // =========================
-// DELETE
+// DELETE REGION
 // =========================
 exports.deleteRegion = async (req, res) => {
   try {
@@ -115,7 +125,7 @@ exports.deleteRegion = async (req, res) => {
 };
 
 // =========================
-// DUP CHECK API (NEW)
+// DUP CHECK
 // =========================
 exports.checkRegionCode = async (req, res) => {
   try {
