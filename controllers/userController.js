@@ -3,9 +3,15 @@ const supabase = require("../services/supabaseService");
 // ===============================
 // USER REGISTER
 // ===============================
+const supabase = require("../services/supabaseService");
+
+// ===============================
+// USER REGISTER (UPDATED)
+// ===============================
 exports.register = async (req, res) => {
   try {
-    const { name, phone, country_code, region_code, fcm_token } = req.body;
+    const { name, phone, country_code, region_code, role, token, device_os } =
+      req.body;
 
     if (!name || !phone) {
       return res.status(400).json({
@@ -14,7 +20,8 @@ exports.register = async (req, res) => {
       });
     }
 
-    const { data, error } = await supabase
+    // 1. USERS UPSERT (role 기본값 처리)
+    const { data: user, error: userError } = await supabase
       .from("users")
       .upsert(
         {
@@ -22,19 +29,36 @@ exports.register = async (req, res) => {
           phone,
           country_code,
           region_code,
-          fcm_token,
-          role: "user",
+          role: role || "user", // ⭐ 핵심 변경
           is_active: true,
+          updated_at: new Date(),
         },
         { onConflict: "phone" },
       )
-      .select();
+      .select()
+      .single();
 
-    if (error) throw error;
+    if (userError) throw userError;
+
+    // 2. DEVICE TOKEN 저장 (fcm_token → device_tokens 이동)
+    if (token) {
+      const { error: tokenError } = await supabase.from("device_tokens").upsert(
+        {
+          user_id: user.id,
+          token,
+          device_os: device_os || "unknown",
+          is_active: true,
+          updated_at: new Date(),
+        },
+        { onConflict: "token" },
+      );
+
+      if (tokenError) throw tokenError;
+    }
 
     return res.json({
       success: true,
-      data,
+      data: user,
     });
   } catch (err) {
     console.error("REGISTER ERROR:", err);
@@ -49,9 +73,12 @@ exports.register = async (req, res) => {
 // ===============================
 // FCM TOKEN UPDATE
 // ===============================
+// ===============================
+// TOKEN UPDATE (device_tokens 기준)
+// ===============================
 exports.registerToken = async (req, res) => {
   try {
-    const { phone, token } = req.body;
+    const { phone, token, device_os } = req.body;
 
     if (!phone || !token) {
       return res.status(400).json({
@@ -60,13 +87,28 @@ exports.registerToken = async (req, res) => {
       });
     }
 
-    const { data, error } = await supabase
+    // 1. user 조회
+    const { data: user, error: userError } = await supabase
       .from("users")
-      .update({
-        fcm_token: token,
-        last_token_update: new Date(),
-      })
+      .select("id")
       .eq("phone", phone)
+      .single();
+
+    if (userError) throw userError;
+
+    // 2. device_tokens upsert
+    const { data, error } = await supabase
+      .from("device_tokens")
+      .upsert(
+        {
+          user_id: user.id,
+          token,
+          device_os: device_os || "unknown",
+          is_active: true,
+          updated_at: new Date(),
+        },
+        { onConflict: "token" },
+      )
       .select();
 
     if (error) throw error;
@@ -97,9 +139,24 @@ exports.getUserByToken = async (req, res) => {
     }
 
     const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("fcm_token", token)
+      .from("device_tokens")
+      .select(
+        `
+        token,
+        device_os,
+        is_active,
+        users (
+          id,
+          name,
+          phone,
+          country_code,
+          region_code,
+          role,
+          is_active
+        )
+      `,
+      )
+      .eq("token", token)
       .maybeSingle();
 
     if (error) throw error;
