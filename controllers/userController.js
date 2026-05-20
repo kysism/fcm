@@ -1,7 +1,7 @@
 const supabase = require("../services/supabaseService");
 
 // ===============================
-// USER REGISTER (UPSERT + DEVICE TOKEN)
+// REGISTER
 // ===============================
 exports.register = async (req, res) => {
   try {
@@ -16,7 +16,7 @@ exports.register = async (req, res) => {
     }
 
     // =========================
-    // 1. USER UPSERT
+    // USER UPSERT
     // =========================
     const { data: user, error: userError } = await supabase
       .from("users")
@@ -38,7 +38,7 @@ exports.register = async (req, res) => {
     if (userError) throw userError;
 
     // =========================
-    // 2. DEVICE TOKEN UPSERT
+    // DEVICE TOKEN UPSERT
     // =========================
     if (token) {
       const { error: tokenError } = await supabase.from("device_tokens").upsert(
@@ -60,8 +60,6 @@ exports.register = async (req, res) => {
       data: user,
     });
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
-
     return res.status(500).json({
       success: false,
       message: err.message,
@@ -97,7 +95,7 @@ exports.getUserByPhone = async (req, res) => {
 };
 
 // ===============================
-// GET USER BY TOKEN (JOIN device_tokens)
+// GET USER BY TOKEN
 // ===============================
 exports.getUserByToken = async (req, res) => {
   try {
@@ -109,6 +107,7 @@ exports.getUserByToken = async (req, res) => {
         `
         token,
         device_os,
+        is_active,
         users (
           id,
           name,
@@ -138,7 +137,7 @@ exports.getUserByToken = async (req, res) => {
 };
 
 // ===============================
-// GET USERS LIST (WITH DEVICE TOKEN FLATTEN)
+// USERS LIST (🔥 FIXED + SAFE JOIN)
 // ===============================
 exports.getUsers = async (req, res) => {
   try {
@@ -155,10 +154,8 @@ exports.getUsers = async (req, res) => {
         region_code,
         role,
         is_active,
-        created_at,
         device_tokens (
-          token,
-          is_active
+          token
         )
       `,
       )
@@ -180,10 +177,18 @@ exports.getUsers = async (req, res) => {
 
     if (error) throw error;
 
-    // flatten token
+    // 🔥 SAFE FLATTEN (null crash 방지)
     const result = (data || []).map((u) => ({
-      ...u,
-      fcm_token: u.device_tokens?.[0]?.token || null,
+      id: u.id,
+      name: u.name,
+      phone: u.phone,
+      country_code: u.country_code,
+      region_code: u.region_code,
+      role: u.role,
+      is_active: u.is_active,
+
+      // 🔥 핵심
+      fcm_token: u.device_tokens?.[0]?.token ?? null,
     }));
 
     return res.json({
@@ -192,8 +197,6 @@ exports.getUsers = async (req, res) => {
       data: result,
     });
   } catch (err) {
-    console.error("GET USERS ERROR:", err);
-
     return res.status(500).json({
       success: false,
       message: err.message,

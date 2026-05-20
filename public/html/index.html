@@ -9,7 +9,21 @@
       body {
         margin: 0;
         font-family: Arial;
-        background: #eef4fb;
+        background: linear-gradient(135deg, #e9f2fb, #dbe9f7);
+      }
+
+      .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
       }
 
       .container {
@@ -19,89 +33,79 @@
       }
 
       .card {
-        background: white;
+        background: #fff;
         padding: 16px;
-        border-radius: 12px;
+        border-radius: 14px;
         margin-bottom: 15px;
-      }
-
-      select,
-      input,
-      textarea {
-        width: 100%;
-        padding: 10px;
-        margin: 5px 0;
-        border: 1px solid #ccc;
-        border-radius: 8px;
       }
 
       .userbox {
         max-height: 300px;
         overflow: auto;
-        border: 1px solid #eee;
       }
 
       .user-item {
         display: flex;
         justify-content: space-between;
-        padding: 8px;
+        padding: 10px;
         border-bottom: 1px solid #eee;
       }
 
-      .send {
+      .send-big {
         width: 100%;
-        padding: 18px;
-        font-size: 20px;
-        background: #d32f2f;
-        color: white;
+        height: 80px;
         border: none;
-        border-radius: 10px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: #fff;
+        font-size: 22px;
       }
     </style>
   </head>
 
   <body>
+    <div class="header">
+      <img src="/img/koica.png" />
+      <div>KOICA Control Center</div>
+    </div>
+
     <div class="container">
-      <!-- COUNTRY -->
       <div class="card">
-        <h3>Country</h3>
         <select id="country" onchange="onCountryChange()">
-          <option value="all">ALL</option>
+          <option value="all">전체 국가</option>
         </select>
       </div>
 
-      <!-- REGION -->
       <div class="card" id="regionCard" style="display: none">
-        <h3>Region</h3>
-        <select id="region" onchange="loadUsers()">
-          <option value="all">ALL</option>
+        <select id="region" onchange="onRegionChange()">
+          <option value="all">전체 지역</option>
         </select>
       </div>
 
-      <!-- ROLE -->
       <div class="card">
-        <h3>Role</h3>
         <select id="role" onchange="loadUsers()">
-          <option value="all">ALL</option>
-          <option value="user">USER</option>
-          <option value="staff">STAFF</option>
+          <option value="all">전체</option>
+          <option value="user">user</option>
+          <option value="staff">staff</option>
         </select>
       </div>
 
-      <!-- USERS -->
       <div class="card">
-        <h3>Users</h3>
         <div class="userbox" id="userList"></div>
+        <div id="countBox">0</div>
       </div>
 
-      <!-- MESSAGE -->
       <div class="card">
-        <h3>Push</h3>
-
         <input id="title" placeholder="title" />
-        <textarea id="body" placeholder="message"></textarea>
+        <textarea id="body"></textarea>
 
-        <button class="send" onclick="send()">SEND</button>
+        <select id="level">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+
+        <button class="send-big" onclick="send()">SEND PUSH</button>
       </div>
     </div>
 
@@ -109,6 +113,7 @@
       const API = "https://fcm-61ns.onrender.com/api";
 
       let users = [];
+      let filtered = [];
       let selected = [];
 
       // =====================
@@ -117,7 +122,6 @@
       async function loadCountries() {
         const res = await fetch(`${API}/countries`);
         const json = await res.json();
-
         const sel = document.getElementById("country");
 
         json.data.forEach((c) => {
@@ -129,38 +133,41 @@
       // COUNTRY CHANGE
       // =====================
       async function onCountryChange() {
-        const country = document.getElementById("country").value;
+        const c = country.value;
 
-        const regionCard = document.getElementById("regionCard");
-        const regionSel = document.getElementById("region");
-
-        regionSel.innerHTML = `<option value="all">ALL</option>`;
         selected = [];
 
-        if (country === "all") {
+        if (c === "all") {
           regionCard.style.display = "none";
-          await loadUsers();
-          return;
+        } else {
+          regionCard.style.display = "block";
+
+          const res = await fetch(`${API}/regions?country_code=${c}`);
+          const json = await res.json();
+
+          region.innerHTML = `<option value="all">전체</option>`;
+          json.data.forEach((r) => {
+            region.innerHTML += `<option value="${r.code}">${r.name}</option>`;
+          });
         }
-
-        regionCard.style.display = "block";
-
-        const res = await fetch(`${API}/regions?country_code=${country}`);
-        const json = await res.json();
-
-        json.data.forEach((r) => {
-          regionSel.innerHTML += `<option value="${r.code}">${r.name}</option>`;
-        });
 
         await loadUsers();
       }
 
       // =====================
-      // LOAD USERS (핵심)
+      // REGION CHANGE
+      // =====================
+      async function onRegionChange() {
+        selected = [];
+        await loadUsers();
+      }
+
+      // =====================
+      // LOAD USERS
       // =====================
       async function loadUsers() {
         const country = document.getElementById("country").value;
-        const region = document.getElementById("region")?.value || "all";
+        const region = document.getElementById("region").value;
         const role = document.getElementById("role").value;
 
         const url = new URL(`${API}/users/list`);
@@ -172,6 +179,7 @@
         const json = await res.json();
 
         users = json.data || [];
+        filtered = users;
 
         render();
       }
@@ -181,17 +189,17 @@
       // =====================
       function render() {
         const box = document.getElementById("userList");
-
         box.innerHTML = "";
 
-        users.forEach((u) => {
+        filtered.forEach((u) => {
           box.innerHTML += `
-      <div class="user-item">
-        <span>${u.name} (${u.role})</span>
-        <input type="checkbox" onchange="toggle('${u.id}')"/>
-      </div>
-    `;
+<div class="user-item">
+<span>${u.name} (${u.role})</span>
+<input type="checkbox" onchange="toggle('${u.id}')"/>
+</div>`;
         });
+
+        document.getElementById("countBox").innerText = filtered.length;
       }
 
       // =====================
@@ -199,47 +207,49 @@
       // =====================
       function toggle(id) {
         const u = users.find((x) => x.id === id);
+        const i = selected.findIndex((x) => x.id === id);
 
-        const idx = selected.findIndex((x) => x.id === id);
-
-        if (idx > -1) selected.splice(idx, 1);
+        if (i > -1) selected.splice(i, 1);
         else selected.push(u);
       }
 
       // =====================
-      // SEND (핵심 수정)
+      // SEND (FIXED)
       // =====================
       async function send() {
         const title = document.getElementById("title").value;
         const body = document.getElementById("body").value;
+        const level = document.getElementById("level").value;
 
-        const targets = selected.length ? selected : users;
+        const targets = selected.length ? selected : filtered;
 
         for (const u of targets) {
-          const token = u.fcm_token;
-
-          if (!token) continue;
+          if (!u.fcm_token) continue;
 
           await fetch(`${API}/fcm/send`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               message: {
-                token,
-                data: { title, body },
+                token: u.fcm_token,
+                data: { title, body, level },
               },
             }),
           });
         }
 
-        alert("sent");
+        alert("전송 완료");
       }
 
-      // =====================
+      // INIT
       window.onload = async () => {
         await loadCountries();
         await loadUsers();
       };
+
+      function go(p) {
+        location.href = p;
+      }
     </script>
   </body>
 </html>
