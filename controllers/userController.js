@@ -1,7 +1,7 @@
 const supabase = require("../services/supabaseService");
 
 // ===============================
-// USER REGISTER
+// USER REGISTER (UPSERT + DEVICE TOKEN)
 // ===============================
 exports.register = async (req, res) => {
   try {
@@ -24,12 +24,9 @@ exports.register = async (req, res) => {
         {
           name,
           phone,
-          country_code: country_code || null,
-          region_code: region_code || null,
-
-          // ⭐ 핵심: role 기본값 확실히 보장
-          role: role?.trim() ? role : "user",
-
+          country_code,
+          region_code,
+          role: role || "user",
           is_active: true,
           updated_at: new Date(),
         },
@@ -38,19 +35,16 @@ exports.register = async (req, res) => {
       .select()
       .single();
 
-    if (userError) {
-      console.error("USER UPSERT ERROR:", userError);
-      throw userError;
-    }
+    if (userError) throw userError;
 
     // =========================
     // 2. DEVICE TOKEN UPSERT
     // =========================
-    if (token && token.trim() !== "") {
+    if (token) {
       const { error: tokenError } = await supabase.from("device_tokens").upsert(
         {
           user_id: user.id,
-          token: token.trim(),
+          token,
           device_os: device_os || "unknown",
           is_active: true,
           updated_at: new Date(),
@@ -58,10 +52,7 @@ exports.register = async (req, res) => {
         { onConflict: "token" },
       );
 
-      if (tokenError) {
-        console.error("DEVICE TOKEN UPSERT ERROR:", tokenError);
-        throw tokenError;
-      }
+      if (tokenError) throw tokenError;
     }
 
     return res.json({
@@ -85,13 +76,6 @@ exports.getUserByPhone = async (req, res) => {
   try {
     const { phone } = req.query;
 
-    if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: "phone is required",
-      });
-    }
-
     const { data, error } = await supabase
       .from("users")
       .select("*")
@@ -113,18 +97,11 @@ exports.getUserByPhone = async (req, res) => {
 };
 
 // ===============================
-// GET USER BY TOKEN (JOIN)
+// GET USER BY TOKEN (JOIN device_tokens)
 // ===============================
 exports.getUserByToken = async (req, res) => {
   try {
     const { token } = req.query;
-
-    if (!token) {
-      return res.status(400).json({
-        success: false,
-        message: "token is required",
-      });
-    }
 
     const { data, error } = await supabase
       .from("device_tokens")
@@ -132,7 +109,6 @@ exports.getUserByToken = async (req, res) => {
         `
         token,
         device_os,
-        is_active,
         users (
           id,
           name,
@@ -162,11 +138,11 @@ exports.getUserByToken = async (req, res) => {
 };
 
 // ===============================
-// GET USERS LIST (🔥 안정화 핵심)
+// GET USERS LIST (WITH DEVICE TOKEN FLATTEN)
 // ===============================
 exports.getUsers = async (req, res) => {
   try {
-    const { country_code, region_code, role, active } = req.query;
+    const { country_code, region_code, role } = req.query;
 
     let query = supabase
       .from("users")
@@ -179,53 +155,44 @@ exports.getUsers = async (req, res) => {
         region_code,
         role,
         is_active,
-        created_at
+        created_at,
+        device_tokens (
+          token,
+          is_active
+        )
       `,
       )
-      .order("created_at", { ascending: false });
+      .order("name", { ascending: true });
 
-    // =========================
-    // COUNTRY FILTER
-    // =========================
     if (country_code && country_code !== "all") {
       query = query.eq("country_code", country_code);
     }
 
-    // =========================
-    // REGION FILTER
-    // =========================
     if (region_code && region_code !== "all") {
       query = query.eq("region_code", region_code);
     }
 
-    // =========================
-    // ROLE FILTER
-    // =========================
     if (role && role !== "all") {
       query = query.eq("role", role);
     }
 
-    // =========================
-    // ACTIVE FILTER (🔥 중요)
-    // =========================
-    if (active && active !== "all") {
-      query = query.eq("is_active", active === "true");
-    }
-
     const { data, error } = await query;
 
-    if (error) {
-      console.error("GET USERS ERROR:", error);
-      throw error;
-    }
+    if (error) throw error;
+
+    // flatten token
+    const result = (data || []).map((u) => ({
+      ...u,
+      fcm_token: u.device_tokens?.[0]?.token || null,
+    }));
 
     return res.json({
       success: true,
-      count: data?.length || 0,
-      data: data || [],
+      count: result.length,
+      data: result,
     });
   } catch (err) {
-    console.error("GET USERS EXCEPTION:", err);
+    console.error("GET USERS ERROR:", err);
 
     return res.status(500).json({
       success: false,
