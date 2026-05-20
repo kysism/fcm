@@ -1,5 +1,3 @@
-const supabase = require("../services/supabaseService");
-
 // ===============================
 // USER REGISTER
 // ===============================
