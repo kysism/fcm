@@ -15,16 +15,21 @@ exports.register = async (req, res) => {
       });
     }
 
+    // =========================
     // 1. USER UPSERT
+    // =========================
     const { data: user, error: userError } = await supabase
       .from("users")
       .upsert(
         {
           name,
           phone,
-          country_code,
-          region_code,
-          role: role || "user",
+          country_code: country_code || null,
+          region_code: region_code || null,
+
+          // ⭐ 핵심: role 기본값 확실히 보장
+          role: role?.trim() ? role : "user",
+
           is_active: true,
           updated_at: new Date(),
         },
@@ -33,14 +38,19 @@ exports.register = async (req, res) => {
       .select()
       .single();
 
-    if (userError) throw userError;
+    if (userError) {
+      console.error("USER UPSERT ERROR:", userError);
+      throw userError;
+    }
 
+    // =========================
     // 2. DEVICE TOKEN UPSERT
-    if (token) {
+    // =========================
+    if (token && token.trim() !== "") {
       const { error: tokenError } = await supabase.from("device_tokens").upsert(
         {
           user_id: user.id,
-          token,
+          token: token.trim(),
           device_os: device_os || "unknown",
           is_active: true,
           updated_at: new Date(),
@@ -48,7 +58,10 @@ exports.register = async (req, res) => {
         { onConflict: "token" },
       );
 
-      if (tokenError) throw tokenError;
+      if (tokenError) {
+        console.error("DEVICE TOKEN UPSERT ERROR:", tokenError);
+        throw tokenError;
+      }
     }
 
     return res.json({
@@ -56,7 +69,8 @@ exports.register = async (req, res) => {
       data: user,
     });
   } catch (err) {
-    console.error(err);
+    console.error("REGISTER ERROR:", err);
+
     return res.status(500).json({
       success: false,
       message: err.message,
@@ -70,6 +84,13 @@ exports.register = async (req, res) => {
 exports.getUserByPhone = async (req, res) => {
   try {
     const { phone } = req.query;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "phone is required",
+      });
+    }
 
     const { data, error } = await supabase
       .from("users")
@@ -98,12 +119,20 @@ exports.getUserByToken = async (req, res) => {
   try {
     const { token } = req.query;
 
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "token is required",
+      });
+    }
+
     const { data, error } = await supabase
       .from("device_tokens")
       .select(
         `
         token,
         device_os,
+        is_active,
         users (
           id,
           name,
@@ -133,11 +162,11 @@ exports.getUserByToken = async (req, res) => {
 };
 
 // ===============================
-// GET USERS LIST
+// GET USERS LIST (🔥 안정화 핵심)
 // ===============================
 exports.getUsers = async (req, res) => {
   try {
-    const { country_code, region_code, role } = req.query;
+    const { country_code, region_code, role, active } = req.query;
 
     let query = supabase
       .from("users")
@@ -153,40 +182,50 @@ exports.getUsers = async (req, res) => {
         created_at
       `,
       )
-      .order("name", { ascending: true });
+      .order("created_at", { ascending: false });
 
     // =========================
-    // FILTER : COUNTRY
+    // COUNTRY FILTER
     // =========================
     if (country_code && country_code !== "all") {
       query = query.eq("country_code", country_code);
     }
 
     // =========================
-    // FILTER : REGION
+    // REGION FILTER
     // =========================
     if (region_code && region_code !== "all") {
       query = query.eq("region_code", region_code);
     }
 
     // =========================
-    // FILTER : ROLE
+    // ROLE FILTER
     // =========================
     if (role && role !== "all") {
       query = query.eq("role", role);
     }
 
+    // =========================
+    // ACTIVE FILTER (🔥 중요)
+    // =========================
+    if (active && active !== "all") {
+      query = query.eq("is_active", active === "true");
+    }
+
     const { data, error } = await query;
 
-    if (error) throw error;
+    if (error) {
+      console.error("GET USERS ERROR:", error);
+      throw error;
+    }
 
     return res.json({
       success: true,
-      count: data.length,
-      data,
+      count: data?.length || 0,
+      data: data || [],
     });
   } catch (err) {
-    console.error("GET USERS ERROR:", err);
+    console.error("GET USERS EXCEPTION:", err);
 
     return res.status(500).json({
       success: false,

@@ -49,11 +49,10 @@
       /* FILTER */
       .filters {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 10px;
       }
 
-      input,
       select {
         padding: 10px;
         border: 1px solid #ddd;
@@ -87,9 +86,11 @@
       .user {
         background: #3498db;
       }
+
       .staff {
         background: #f39c12;
       }
+
       .admin {
         background: #e74c3c;
       }
@@ -97,17 +98,9 @@
       .active {
         background: #2ecc71;
       }
+
       .inactive {
         background: #bdc3c7;
-      }
-
-      .token-ok {
-        color: #27ae60;
-        font-weight: bold;
-      }
-      .token-empty {
-        color: #c0392b;
-        font-weight: bold;
       }
 
       /* MOBILE */
@@ -160,12 +153,7 @@
       <!-- FILTER -->
       <div class="card">
         <div class="filters">
-          <input
-            id="search"
-            placeholder="Search name / phone"
-            oninput="debouncedLoad()"
-          />
-
+          <!-- ROLE -->
           <select id="role" onchange="loadUsers()">
             <option value="all">All Role</option>
             <option value="user">User</option>
@@ -173,16 +161,19 @@
             <option value="admin">Admin</option>
           </select>
 
+          <!-- ACTIVE -->
           <select id="active" onchange="loadUsers()">
             <option value="all">All Status</option>
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
 
+          <!-- COUNTRY -->
           <select id="country" onchange="onCountryChange()">
             <option value="all">All Country</option>
           </select>
 
+          <!-- REGION -->
           <select id="region" onchange="loadUsers()" style="display: none">
             <option value="all">All Region</option>
           </select>
@@ -200,8 +191,7 @@
               <th>Country</th>
               <th>Region</th>
               <th>Active</th>
-              <th>FCM</th>
-              <th>Last Login</th>
+              <th>Created</th>
             </tr>
           </thead>
 
@@ -214,63 +204,80 @@
 
     <script>
       let users = [];
-      let timer;
 
-      /* =========================
-         DEBOUNCE SEARCH
-      ========================= */
-      function debouncedLoad() {
-        clearTimeout(timer);
-        timer = setTimeout(loadUsers, 300);
-      }
-
-      /* =========================
-         LOAD COUNTRIES
-      ========================= */
+      // =========================
+      // LOAD COUNTRIES
+      // =========================
       async function loadCountries() {
-        const res = await fetch("/api/countries");
-        const json = await res.json();
+        try {
+          const res = await fetch("/api/countries");
+          const json = await res.json();
 
-        const sel = document.getElementById("country");
-        sel.innerHTML = `<option value="all">All Country</option>`;
+          const sel = document.getElementById("country");
 
-        json.data.forEach((c) => {
-          sel.innerHTML += `<option value="${c.code}">${c.name}</option>`;
-        });
+          sel.innerHTML = `
+            <option value="all">All Country</option>
+          `;
+
+          (json.data || []).forEach((c) => {
+            sel.innerHTML += `
+              <option value="${c.code}">
+                ${c.name}
+              </option>
+            `;
+          });
+        } catch (e) {
+          console.error(e);
+        }
       }
 
-      /* =========================
-         COUNTRY CHANGE → REGIONS
-      ========================= */
+      // =========================
+      // COUNTRY CHANGE
+      // =========================
       async function onCountryChange() {
         const country = document.getElementById("country").value;
         const regionSel = document.getElementById("region");
 
+        // RESET
+        regionSel.innerHTML = `
+          <option value="all">All Region</option>
+        `;
+
+        // COUNTRY = ALL
         if (country === "all") {
           regionSel.style.display = "none";
-          regionSel.innerHTML = `<option value="all">All Region</option>`;
-          loadUsers();
+
+          await loadUsers();
+
           return;
         }
 
-        const res = await fetch(`/api/regions?country_code=${country}`);
-        const json = await res.json();
+        // LOAD REGIONS
+        try {
+          const res = await fetch(`/api/regions?country_code=${country}`);
 
-        regionSel.style.display = "block";
-        regionSel.innerHTML = `<option value="all">All Region</option>`;
+          const json = await res.json();
 
-        json.data.forEach((r) => {
-          regionSel.innerHTML += `<option value="${r.code}">${r.name}</option>`;
-        });
+          (json.data || []).forEach((r) => {
+            regionSel.innerHTML += `
+              <option value="${r.code}">
+                ${r.name}
+              </option>
+            `;
+          });
 
-        loadUsers();
+          regionSel.style.display = "block";
+        } catch (e) {
+          console.error(e);
+        }
+
+        await loadUsers();
       }
 
-      /* =========================
-         LOAD USERS
-      ========================= */
+      // =========================
+      // LOAD USERS
+      // =========================
       async function loadUsers() {
-        const search = document.getElementById("search").value;
         const role = document.getElementById("role").value;
         const active = document.getElementById("active").value;
         const country = document.getElementById("country").value;
@@ -278,77 +285,108 @@
 
         const url = new URL("/api/users/list", window.location.origin);
 
-        url.searchParams.append("country_code", country);
-        url.searchParams.append("region_code", region);
-        url.searchParams.append("role", role);
-        url.searchParams.append("active", active);
-        url.searchParams.append("keyword", search);
+        // COUNTRY
+        if (country && country !== "all") {
+          url.searchParams.append("country_code", country);
+        }
 
-        const res = await fetch(url);
-        const json = await res.json();
+        // REGION
+        if (region && region !== "all") {
+          url.searchParams.append("region_code", region);
+        }
 
-        users = json.data || [];
+        // ROLE
+        if (role && role !== "all") {
+          url.searchParams.append("role", role);
+        }
 
-        render();
+        // ACTIVE
+        if (active && active !== "all") {
+          url.searchParams.append("active", active);
+        }
+
+        try {
+          const res = await fetch(url);
+          const json = await res.json();
+
+          users = json.data || [];
+
+          render();
+        } catch (e) {
+          console.error(e);
+        }
       }
 
-      /* =========================
-         RENDER TABLE + MOBILE
-      ========================= */
+      // =========================
+      // RENDER
+      // =========================
       function render() {
         let html = "";
 
         users.forEach((u) => {
           html += `
             <tr>
-              <td>${u.name}</td>
-              <td>${u.phone}</td>
-              <td><span class="badge ${u.role}">${u.role}</span></td>
+              <td>${u.name || "-"}</td>
+
+              <td>${u.phone || "-"}</td>
+
+              <td>
+                <span class="badge ${u.role}">
+                  ${u.role || "-"}
+                </span>
+              </td>
+
               <td>${u.country_code || "-"}</td>
+
               <td>${u.region_code || "-"}</td>
+
               <td>
                 <span class="badge ${u.is_active ? "active" : "inactive"}">
                   ${u.is_active ? "YES" : "NO"}
                 </span>
               </td>
-              <td class="${u.fcm_token ? "token-ok" : "token-empty"}">
-                ${u.fcm_token ? "CONNECTED" : "EMPTY"}
+
+              <td>
+                ${u.created_at || "-"}
               </td>
-              <td>${u.last_login || "-"}</td>
             </tr>
           `;
         });
 
         document.getElementById("body").innerHTML = html;
 
+        // MOBILE
         let mobile = "";
 
         users.forEach((u) => {
           mobile += `
             <div class="user-box">
-              <b>${u.name}</b>
 
-              <div class="small">📞 ${u.phone}</div>
+              <b>${u.name || "-"}</b>
 
               <div class="small">
-                👤 Role:
+                📞 ${u.phone || "-"}
+              </div>
+
+              <div class="small">
+                👤
                 <span class="badge ${u.role}">
-                  ${u.role}
+                  ${u.role || "-"}
                 </span>
               </div>
 
-              <div class="small">🌍 ${u.country_code || "-"}</div>
-              <div class="small">🗺 ${u.region_code || "-"}</div>
+              <div class="small">
+                🌍 ${u.country_code || "-"}
+              </div>
+
+              <div class="small">
+                🗺 ${u.region_code || "-"}
+              </div>
 
               <div class="small">
                 ${u.is_active ? "ACTIVE" : "INACTIVE"}
               </div>
 
-              <div class="small">
-                ${u.fcm_token ? "CONNECTED" : "EMPTY"}
-              </div>
-
-              <div class="small">🕒 ${u.last_login || "-"}</div>
             </div>
           `;
         });
@@ -356,16 +394,16 @@
         document.getElementById("mobile").innerHTML = mobile;
       }
 
-      /* =========================
-         NAV
-      ========================= */
-      function go(p) {
-        location.href = p;
+      // =========================
+      // NAVIGATION
+      // =========================
+      function go(path) {
+        location.href = path;
       }
 
-      /* =========================
-         INIT
-      ========================= */
+      // =========================
+      // INIT
+      // =========================
       window.onload = async () => {
         await loadCountries();
         await loadUsers();
