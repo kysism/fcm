@@ -65,7 +65,7 @@ exports.register = async (req, res) => {
 };
 
 // ===============================
-// GET USER BY PHONE (🔥 핵심)
+// GET USER BY PHONE
 // ===============================
 exports.getUserByPhone = async (req, res) => {
   try {
@@ -125,6 +125,69 @@ exports.getUserByToken = async (req, res) => {
       data,
     });
   } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+// ===============================
+// GET USERS LIST
+// ===============================
+exports.getUsers = async (req, res) => {
+  try {
+    const { country_code, region_code, role } = req.query;
+
+    let query = supabase
+      .from("users")
+      .select(
+        `
+        id,
+        name,
+        phone,
+        country_code,
+        region_code,
+        role,
+        is_active,
+        created_at
+      `,
+      )
+      .order("name", { ascending: true });
+
+    // =========================
+    // FILTER : COUNTRY
+    // =========================
+    if (country_code && country_code !== "all") {
+      query = query.eq("country_code", country_code);
+    }
+
+    // =========================
+    // FILTER : REGION
+    // =========================
+    if (region_code && region_code !== "all") {
+      query = query.eq("region_code", region_code);
+    }
+
+    // =========================
+    // FILTER : ROLE
+    // =========================
+    if (role && role !== "all") {
+      query = query.eq("role", role);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return res.json({
+      success: true,
+      count: data.length,
+      data,
+    });
+  } catch (err) {
+    console.error("GET USERS ERROR:", err);
+
     return res.status(500).json({
       success: false,
       message: err.message,
