@@ -1,10 +1,7 @@
-// ===============================
-// USER REGISTER
-// ===============================
 const supabase = require("../services/supabaseService");
 
 // ===============================
-// USER REGISTER (UPDATED)
+// USER REGISTER (UPSERT + DEVICE TOKEN)
 // ===============================
 exports.register = async (req, res) => {
   try {
@@ -18,7 +15,9 @@ exports.register = async (req, res) => {
       });
     }
 
-    // 1. USERS UPSERT (role 기본값 처리)
+    // =========================
+    // 1. USER UPSERT
+    // =========================
     const { data: user, error: userError } = await supabase
       .from("users")
       .upsert(
@@ -27,7 +26,7 @@ exports.register = async (req, res) => {
           phone,
           country_code,
           region_code,
-          role: role || "user", // ⭐ 핵심 변경
+          role: role || "user",
           is_active: true,
           updated_at: new Date(),
         },
@@ -38,7 +37,9 @@ exports.register = async (req, res) => {
 
     if (userError) throw userError;
 
-    // 2. DEVICE TOKEN 저장 (fcm_token → device_tokens 이동)
+    // =========================
+    // 2. DEVICE TOKEN UPSERT
+    // =========================
     if (token) {
       const { error: tokenError } = await supabase.from("device_tokens").upsert(
         {
@@ -69,10 +70,7 @@ exports.register = async (req, res) => {
 };
 
 // ===============================
-// FCM TOKEN UPDATE
-// ===============================
-// ===============================
-// TOKEN UPDATE (device_tokens 기준)
+// UPDATE DEVICE TOKEN ONLY
 // ===============================
 exports.registerToken = async (req, res) => {
   try {
@@ -85,7 +83,9 @@ exports.registerToken = async (req, res) => {
       });
     }
 
-    // 1. user 조회
+    // =========================
+    // 1. GET USER
+    // =========================
     const { data: user, error: userError } = await supabase
       .from("users")
       .select("id")
@@ -94,7 +94,9 @@ exports.registerToken = async (req, res) => {
 
     if (userError) throw userError;
 
-    // 2. device_tokens upsert
+    // =========================
+    // 2. UPSERT DEVICE TOKEN
+    // =========================
     const { data, error } = await supabase
       .from("device_tokens")
       .upsert(
@@ -125,6 +127,9 @@ exports.registerToken = async (req, res) => {
   }
 };
 
+// ===============================
+// GET USER BY TOKEN (JOIN)
+// ===============================
 exports.getUserByToken = async (req, res) => {
   try {
     const { token } = req.query;
@@ -150,7 +155,8 @@ exports.getUserByToken = async (req, res) => {
           country_code,
           region_code,
           role,
-          is_active
+          is_active,
+          created_at
         )
       `,
       )
@@ -171,6 +177,43 @@ exports.getUserByToken = async (req, res) => {
   }
 };
 
+// ===============================
+// GET USER BY PHONE (🔥 MISSING BUT CRITICAL)
+// ===============================
+exports.getUserByPhone = async (req, res) => {
+  try {
+    const { phone } = req.query;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "phone is required",
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+// ===============================
+// GET USERS LIST
+// ===============================
 exports.getUsers = async (req, res) => {
   try {
     const { country_code, region_code } = req.query;

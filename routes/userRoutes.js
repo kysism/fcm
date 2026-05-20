@@ -4,23 +4,22 @@ const router = express.Router();
 const user = require("../controllers/userController");
 
 // ===============================
-// USER REGISTER
+// USER FLOW
 // ===============================
 router.post("/register", user.register);
 
-// ===============================
-// USER LIST
-// ===============================
-router.get("/list", user.getUsers);
+// device token update
+router.post("/device-token", user.registerToken);
+
+// get user by phone (APP START 핵심)
+router.get("/by-phone", user.getUserByPhone);
+
+// get user by FCM token (optional debug or admin use)
+router.get("/by-token", user.getUserByToken);
 
 // ===============================
-// FCM TOKEN UPDATE
+// ADMIN / LIST
 // ===============================
-router.post("/token", user.registerToken);
-
-// ===============================
-// FCM TOKEN Register
-// ===============================
-router.get("/", user.getUserByToken);
+router.get("/", user.getUsers);
 
 module.exports = router;
