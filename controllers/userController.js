@@ -1,7 +1,7 @@
 const supabase = require("../services/supabaseService");
 
 // ===============================
-// REGISTER
+// REGISTER (UPSERT)
 // ===============================
 exports.register = async (req, res) => {
   try {
@@ -15,9 +15,9 @@ exports.register = async (req, res) => {
       });
     }
 
-    // =========================
+    // ======================
     // USER UPSERT
-    // =========================
+    // ======================
     const { data: user, error: userError } = await supabase
       .from("users")
       .upsert(
@@ -37,9 +37,9 @@ exports.register = async (req, res) => {
 
     if (userError) throw userError;
 
-    // =========================
+    // ======================
     // DEVICE TOKEN UPSERT
-    // =========================
+    // ======================
     if (token) {
       const { error: tokenError } = await supabase.from("device_tokens").upsert(
         {
@@ -60,6 +60,7 @@ exports.register = async (req, res) => {
       data: user,
     });
   } catch (err) {
+    console.error(err);
     return res.status(500).json({
       success: false,
       message: err.message,
@@ -107,7 +108,6 @@ exports.getUserByToken = async (req, res) => {
         `
         token,
         device_os,
-        is_active,
         users (
           id,
           name,
@@ -137,7 +137,7 @@ exports.getUserByToken = async (req, res) => {
 };
 
 // ===============================
-// USERS LIST (🔥 FIXED + SAFE JOIN)
+// USERS LIST (JOIN DEVICE TOKEN)
 // ===============================
 exports.getUsers = async (req, res) => {
   try {
@@ -177,18 +177,9 @@ exports.getUsers = async (req, res) => {
 
     if (error) throw error;
 
-    // 🔥 SAFE FLATTEN (null crash 방지)
-    const result = (data || []).map((u) => ({
-      id: u.id,
-      name: u.name,
-      phone: u.phone,
-      country_code: u.country_code,
-      region_code: u.region_code,
-      role: u.role,
-      is_active: u.is_active,
-
-      // 🔥 핵심
-      fcm_token: u.device_tokens?.[0]?.token ?? null,
+    const result = data.map((u) => ({
+      ...u,
+      fcm_token: u.device_tokens?.[0]?.token || null,
     }));
 
     return res.json({
@@ -197,6 +188,7 @@ exports.getUsers = async (req, res) => {
       data: result,
     });
   } catch (err) {
+    console.error("GET USERS ERROR:", err);
     return res.status(500).json({
       success: false,
       message: err.message,
