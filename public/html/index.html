@@ -322,33 +322,17 @@
             },
 
             body: JSON.stringify({
-              country_code: document.getElementById("country").value,
-
-              region_code: document.getElementById("region")?.value || "all",
-
               message: {
                 token: u.fcm_token,
 
-                notification: {
-                  title,
-                  body,
-                },
-
                 data: {
-                  title,
-                  body,
+                  title: title,
+                  body: body,
                   level: String(level),
                 },
 
                 android: {
                   priority: "high",
-
-                  notification: {
-                    channel_id: "emergency_channel",
-                    sound: "default",
-                    priority: "max",
-                    default_vibrate_timings: true,
-                  },
                 },
               },
             }),
