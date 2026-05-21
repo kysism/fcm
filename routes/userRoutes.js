@@ -4,18 +4,19 @@ const router = express.Router();
 const user = require("../controllers/userController");
 
 // ===============================
-// USER REGISTER
+// REGISTER
 // ===============================
 router.post("/register", user.register);
 
 // ===============================
-// FCM TOKEN UPDATE
+// GET USER
 // ===============================
-router.post("/token", user.registerToken);
+router.get("/by-phone", user.getUserByPhone);
+router.get("/by-token", user.getUserByToken);
 
 // ===============================
-// FCM TOKEN Register
+// USER LIST
 // ===============================
-router.get("/", user.getUserByToken);
+router.get("/list", user.getUsers);
 
 module.exports = router;
