@@ -1,41 +1,30 @@
+const supabase = require("../services/supabaseService");
 const { sendToDevice } = require("../services/firebaseService");
 
 // =====================
-// DEVICE PUSH ONLY (SAFE)
+// SEND PUSH
 // =====================
 exports.sendPush = async (req, res) => {
   try {
-    const { message } = req.body;
+    const payload = req.body;
 
-    // ======================
-    // VALIDATION
-    // ======================
-    if (!message || !message.token) {
-      return res.status(400).send({
-        success: false,
-        error: "message.token is required",
-      });
-    }
+    // FCM SEND
+    const result = await sendToDevice(payload);
 
-    if (!message.notification && !message.data) {
-      return res.status(400).send({
-        success: false,
-        error: "notification or data required",
-      });
-    }
-
-    // ======================
-    // SEND
-    // ======================
-    const result = await sendToDevice({ message });
+    // SAVE LOG
+    await supabase.from("push_messages").insert({
+      title: payload.message.data.title,
+      body: payload.message.data.body,
+      country_code: payload.country_code || null,
+      region_code: payload.region_code || null,
+      created_by: "admin",
+    });
 
     return res.send({
       success: true,
       result,
     });
   } catch (err) {
-    console.error("SEND PUSH ERROR:", err);
-
     return res.status(500).send({
       success: false,
       error: err.message,

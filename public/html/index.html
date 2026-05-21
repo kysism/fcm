@@ -304,24 +304,51 @@
         const body = document.getElementById("body").value;
         const level = document.getElementById("level").value;
 
+        if (!level) {
+          alert("등급을 선택하세요");
+          return;
+        }
+
         const targets = selected.length ? selected : filteredUsers;
 
         for (const u of targets) {
+          if (!u.fcm_token) continue;
+
           await fetch(`${API}/fcm/send`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
             body: JSON.stringify({
+              country_code: document.getElementById("country").value,
+
+              region_code: document.getElementById("region")?.value || "all",
+
               message: {
                 token: u.fcm_token,
 
+                notification: {
+                  title,
+                  body,
+                },
+
                 data: {
-                  title: title,
-                  body: body,
+                  title,
+                  body,
                   level: String(level),
                 },
 
                 android: {
                   priority: "high",
+
+                  notification: {
+                    channel_id: "emergency_channel",
+                    sound: "default",
+                    priority: "max",
+                    default_vibrate_timings: true,
+                  },
                 },
               },
             }),
