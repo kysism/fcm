@@ -132,7 +132,7 @@
     <!-- HEADER -->
     <div class="header">
       <img src="/img/koica.png" />
-      <div class="header-title">Koica Emergency Control Center</div>
+      <div class="header-title">KOICA Emergency Control Center</div>
       <div></div>
     </div>
 
@@ -304,16 +304,63 @@
         const body = document.getElementById("body").value;
         const level = document.getElementById("level").value;
 
+        const country = document.getElementById("country").value;
+        const region = document.getElementById("region")?.value || "all";
+
         const targets = selected.length ? selected : filteredUsers;
 
+        // =========================
+        // VALIDATION
+        // =========================
+        if (!title || !body) {
+          alert("제목과 메시지를 입력하세요.");
+          return;
+        }
+
+        if (targets.length === 0) {
+          alert("대상 사용자가 없습니다.");
+          return;
+        }
+
+        // =========================
+        // 1. SAVE PUSH LOG
+        // =========================
+        await fetch(`${API}/push-messages`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title,
+            body,
+            country_code: country,
+            region_code: region,
+            created_by: "admin",
+          }),
+        });
+
+        // =========================
+        // 2. SEND PUSH
+        // =========================
         for (const u of targets) {
+          if (!u.fcm_token) continue;
+
           await fetch(`${API}/fcm/send`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
             body: JSON.stringify({
               message: {
                 token: u.fcm_token,
-                data: { title, body, level },
+
+                data: {
+                  title,
+                  body,
+                  level,
+                },
               },
             }),
           });
