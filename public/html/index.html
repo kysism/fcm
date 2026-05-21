@@ -268,10 +268,24 @@
         const body = document.getElementById("body").value;
         const level = document.getElementById("level").value;
 
-        const targets = selected.length ? selected : users;
+        const targets = selected.length ? selected : filteredUsers;
+
+        // 🔥 push_messages 로그 1회 저장 (중요)
+        await fetch(`${API}/push_messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title,
+            body,
+            level: String(level),
+            country_code: document.getElementById("country").value,
+            region_code: document.getElementById("region").value,
+          }),
+        });
 
         for (const u of targets) {
-          // 1. PUSH
+          if (!u.fcm_token) continue;
+
           await fetch(`${API}/fcm/send`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -279,33 +293,16 @@
               message: {
                 token: u.fcm_token,
                 data: {
-                  title,
-                  body,
+                  title: title,
+                  body: body,
                   level: String(level),
-                },
-                android: {
-                  priority: "high",
                 },
               },
             }),
           });
-
-          // 2. LOG
-          await fetch(`${API}/push/log`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title,
-              body,
-              level,
-              country_code: u.country_code,
-              region_code: u.region_code,
-              created_by: "admin",
-            }),
-          });
         }
 
-        alert("전송 + 로그 저장 완료");
+        alert("전송 완료");
       }
 
       function go(page) {
