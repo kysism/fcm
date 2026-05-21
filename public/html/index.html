@@ -13,20 +13,27 @@
         color: #1f2d3d;
       }
 
-      /* ================= HEADER (LARGE FIX) ================= */
+      /* ================= HEADER ================= */
       .header {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
+
         height: 90px;
+
         display: flex;
         align-items: center;
         justify-content: space-between;
+
         padding: 0 30px;
+
         background: rgba(255, 255, 255, 0.95);
+
         backdrop-filter: blur(10px);
+
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+
         z-index: 1000;
       }
 
@@ -35,7 +42,7 @@
       }
 
       .header-title {
-        font-size: 26px;
+        font-size: 28px;
         font-weight: 800;
         color: #1c6ca1;
       }
@@ -55,7 +62,7 @@
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
       }
 
-      /* ================= NAV RESTORED ================= */
+      /* ================= NAV ================= */
       .nav {
         display: flex;
         gap: 10px;
@@ -85,10 +92,12 @@
         border-radius: 10px;
         border: 1px solid #d0d7e2;
         box-sizing: border-box;
+        margin-bottom: 10px;
       }
 
       textarea {
         min-height: 140px;
+        resize: none;
       }
 
       /* ================= USER LIST ================= */
@@ -120,6 +129,10 @@
         cursor: pointer;
       }
 
+      .send-big:hover {
+        opacity: 0.9;
+      }
+
       .count-box {
         margin-top: 10px;
         font-weight: bold;
@@ -137,17 +150,20 @@
     </div>
 
     <div class="container">
-      <!-- NAV (RESTORED) -->
+      <!-- NAV -->
       <div class="card nav">
         <button class="btn-nav" onclick="go('/html/user_view.html')">
           👥 Users
         </button>
+
         <button class="btn-nav" onclick="go('/html/push_logs.html')">
           📡 Logs
         </button>
+
         <button class="btn-nav" onclick="go('/html/countries.html')">
           ⚙ Countries
         </button>
+
         <button class="btn-nav" onclick="go('/html/regions.html')">
           ⚙ Regions
         </button>
@@ -156,6 +172,7 @@
       <!-- COUNTRY -->
       <div class="card">
         <h3>🌍 Country</h3>
+
         <select id="country" onchange="onCountryChange()">
           <option value="all">전체</option>
         </select>
@@ -164,6 +181,7 @@
       <!-- REGION -->
       <div class="card" id="regionCard" style="display: none">
         <h3>🗺 Region</h3>
+
         <select id="region" onchange="onRegionChange()">
           <option value="all">전체</option>
         </select>
@@ -172,6 +190,7 @@
       <!-- ROLE -->
       <div class="card">
         <h3>👤 Role</h3>
+
         <select id="role" onchange="loadUsers()">
           <option value="all">전체</option>
           <option value="user">user</option>
@@ -183,7 +202,9 @@
       <!-- USERS -->
       <div class="card">
         <h3>👥 Users</h3>
+
         <div class="userbox" id="userList"></div>
+
         <div class="count-box" id="countBox">총 0명</div>
       </div>
 
@@ -192,9 +213,12 @@
         <h3>📡 Push Message</h3>
 
         <input id="title" placeholder="Title" />
+
         <textarea id="body" placeholder="Message"></textarea>
 
+        <!-- 핵심 수정 -->
         <select id="level">
+          <option value="">⚠ 위험레벨 선택</option>
           <option value="1">🔴 LEVEL 1</option>
           <option value="2">🟠 LEVEL 2</option>
           <option value="3">🟢 LEVEL 3</option>
@@ -212,6 +236,9 @@
       let filteredUsers = [];
       let selected = [];
 
+      // =============================
+      // COUNTRY
+      // =============================
       async function loadCountries() {
         const res = await fetch(`${API}/countries`);
         const json = await res.json();
@@ -219,16 +246,28 @@
         const sel = document.getElementById("country");
 
         json.data.forEach((c) => {
-          sel.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+          sel.innerHTML += `
+            <option value="${c.code}">
+              ${c.name}
+            </option>
+          `;
         });
       }
 
+      // =============================
+      // COUNTRY CHANGE
+      // =============================
       async function onCountryChange() {
         const country = document.getElementById("country").value;
+
         const regionCard = document.getElementById("regionCard");
+
         const regionSel = document.getElementById("region");
 
-        regionSel.innerHTML = `<option value="all">전체</option>`;
+        regionSel.innerHTML = `
+          <option value="all">전체</option>
+        `;
+
         selected = [];
 
         if (country === "all") {
@@ -240,41 +279,61 @@
         regionCard.style.display = "block";
 
         const res = await fetch(`${API}/regions?country_code=${country}`);
+
         const json = await res.json();
 
         json.data.forEach((r) => {
-          regionSel.innerHTML += `<option value="${r.code}">${r.name}</option>`;
+          regionSel.innerHTML += `
+            <option value="${r.code}">
+              ${r.name}
+            </option>
+          `;
         });
 
         await loadUsers();
       }
 
+      // =============================
+      // REGION CHANGE
+      // =============================
       async function onRegionChange() {
         selected = [];
         await loadUsers();
       }
 
+      // =============================
+      // LOAD USERS
+      // =============================
       async function loadUsers() {
         const country = document.getElementById("country").value;
+
         const region = document.getElementById("region")?.value || "all";
+
         const role = document.getElementById("role").value;
 
         const url = new URL(`${API}/users/list`);
+
         url.searchParams.append("country_code", country);
         url.searchParams.append("region_code", region);
         url.searchParams.append("role", role);
 
         const res = await fetch(url);
+
         const json = await res.json();
 
         users = json.data || [];
+
         filteredUsers = users;
 
         renderUsers(users);
       }
 
+      // =============================
+      // RENDER USERS
+      // =============================
       function renderUsers(list) {
         const box = document.getElementById("userList");
+
         const count = document.getElementById("countBox");
 
         box.innerHTML = "";
@@ -282,8 +341,17 @@
         list.forEach((u) => {
           box.innerHTML += `
             <div class="user-item">
-              <span>${u.name} (${u.role})</span>
-              <input type="checkbox" onchange="toggle('${u.id}')"/>
+
+              <span>
+                ${u.name}
+                (${u.role})
+              </span>
+
+              <input
+                type="checkbox"
+                onchange="toggle('${u.id}')"
+              />
+
             </div>
           `;
         });
@@ -291,57 +359,61 @@
         count.innerText = `총 ${list.length}명`;
       }
 
+      // =============================
+      // TOGGLE
+      // =============================
       function toggle(id) {
         const u = users.find((x) => x.id === id);
+
         const idx = selected.findIndex((x) => x.id === id);
 
-        if (idx > -1) selected.splice(idx, 1);
-        else selected.push(u);
+        if (idx > -1) {
+          selected.splice(idx, 1);
+        } else {
+          selected.push(u);
+        }
       }
 
+      // =============================
+      // SEND
+      // =============================
       async function send() {
-        const title = document.getElementById("title").value;
-        const body = document.getElementById("body").value;
+        const title = document.getElementById("title").value.trim();
+
+        const body = document.getElementById("body").value.trim();
+
         const level = document.getElementById("level").value;
 
-        const country = document.getElementById("country").value;
-        const region = document.getElementById("region")?.value || "all";
-
-        const targets = selected.length ? selected : filteredUsers;
-
-        // =========================
-        // VALIDATION
-        // =========================
-        if (!title || !body) {
-          alert("제목과 메시지를 입력하세요.");
+        if (!title) {
+          alert("제목을 입력하세요.");
           return;
         }
 
-        if (targets.length === 0) {
+        if (!body) {
+          alert("메시지를 입력하세요.");
+          return;
+        }
+
+        // 핵심 수정
+        if (!level) {
+          alert("위험레벨을 선택하세요.");
+          return;
+        }
+
+        const country = document.getElementById("country").value;
+
+        const region = document.getElementById("region")?.value || "all";
+
+        const targets = selected.length > 0 ? selected : filteredUsers;
+
+        if (!targets.length) {
           alert("대상 사용자가 없습니다.");
           return;
         }
 
-        // =========================
-        // 1. SAVE PUSH LOG
-        // =========================
-        await fetch(`${API}/push-messages`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title,
-            body,
-            country_code: country,
-            region_code: region,
-            created_by: "admin",
-          }),
-        });
-
-        // =========================
-        // 2. SEND PUSH
-        // =========================
+        // =============================
+        // PUSH SEND
+        // =============================
         for (const u of targets) {
           if (!u.fcm_token) continue;
 
@@ -356,24 +428,70 @@
               message: {
                 token: u.fcm_token,
 
+                notification: {
+                  title: title,
+                  body: body,
+                },
+
                 data: {
-                  title,
-                  body,
-                  level,
+                  title: title,
+                  body: body,
+                  level: String(level),
+                },
+
+                android: {
+                  priority: "high",
+
+                  notification: {
+                    sound: "default",
+                    channel_id: "high_importance_channel",
+                  },
                 },
               },
             }),
           });
         }
 
+        // =============================
+        // LOG SAVE
+        // =============================
+        await fetch(`${API}/push-messages`, {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            title,
+            body,
+            level,
+            country_code: country,
+            region_code: region,
+            created_by: "admin",
+          }),
+        });
+
         alert("전송 완료");
+
+        // 핵심 수정
+        document.getElementById("level").value = "";
       }
 
+      // =============================
+      // INIT
+      // =============================
       window.onload = async () => {
         await loadCountries();
         await loadUsers();
+
+        // 초기값 강제
+        document.getElementById("level").value = "";
       };
 
+      // =============================
+      // MOVE PAGE
+      // =============================
       function go(page) {
         location.href = page;
       }
