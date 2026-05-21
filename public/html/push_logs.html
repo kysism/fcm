@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Push Logs</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial;
+        background: #f3f6fb;
+        color: #1f2d3d;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: auto;
+        padding: 20px;
+      }
+
+      .card {
+        background: white;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 15px;
+      }
+
+      .nav {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      .btn {
+        background: #1c6ca1;
+        color: white;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .table th,
+      .table td {
+        border-bottom: 1px solid #eee;
+        padding: 10px;
+        text-align: left;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- NAV -->
+      <div class="card nav">
+        <button class="btn" onclick="go('/')">← Main</button>
+      </div>
+
+      <!-- TITLE -->
+      <div class="card">
+        <h2>📡 Push Logs</h2>
+      </div>
+
+      <!-- LIST -->
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Title</th>
+              <th>Body</th>
+              <th>Level</th>
+              <th>Target</th>
+            </tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      /* MOCK LOGS */
+      let logs = [];
+
+      function render() {
+        let html = "";
+
+        logs.forEach((l) => {
+          html += `
+      <tr>
+        <td>${l.time}</td>
+        <td>${l.title}</td>
+        <td>${l.body}</td>
+        <td>${l.level}</td>
+        <td>${l.target}</td>
+      </tr>
+    `;
+        });
+
+        document.getElementById("logBody").innerHTML = html;
+      }
+
+      function go(p) {
+        location.href = p;
+      }
+
+      render();
+    </script>
+  </body>
+</html>

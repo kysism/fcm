@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Users Management</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial;
+        background: #f3f6fb;
+        color: #1f2d3d;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: auto;
+        padding: 20px;
+      }
+
+      .card {
+        background: white;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 15px;
+      }
+
+      .nav {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        padding: 10px 14px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      .btn {
+        background: #1c6ca1;
+        color: white;
+      }
+
+      /* FILTER */
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      select {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      /* TABLE */
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .table th,
+      .table td {
+        border-bottom: 1px solid #eee;
+        padding: 10px;
+        text-align: left;
+        font-size: 13px;
+      }
+
+      .badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: white;
+        font-weight: bold;
+      }
+
+      .user {
+        background: #3498db;
+      }
+
+      .staff {
+        background: #f39c12;
+      }
+
+      .admin {
+        background: #e74c3c;
+      }
+
+      .active {
+        background: #2ecc71;
+      }
+
+      .inactive {
+        background: #bdc3c7;
+      }
+
+      /* MOBILE */
+      .mobile-card {
+        display: none;
+      }
+
+      .user-box {
+        padding: 12px;
+        border-radius: 10px;
+        background: #fafafa;
+        margin-bottom: 10px;
+        border: 1px solid #eee;
+      }
+
+      .small {
+        font-size: 12px;
+        opacity: 0.75;
+        margin-top: 4px;
+      }
+
+      @media (max-width: 768px) {
+        .filters {
+          grid-template-columns: 1fr;
+        }
+
+        table {
+          display: none;
+        }
+
+        .mobile-card {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- NAV -->
+      <div class="card nav">
+        <button class="btn" onclick="go('/')">← Main</button>
+      </div>
+
+      <!-- TITLE -->
+      <div class="card">
+        <h2>👥 Users Management</h2>
+      </div>
+
+      <!-- FILTER -->
+      <div class="card">
+        <div class="filters">
+          <!-- ROLE -->
+          <select id="role" onchange="loadUsers()">
+            <option value="all">All Role</option>
+            <option value="user">User</option>
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+
+          <!-- ACTIVE -->
+          <select id="active" onchange="loadUsers()">
+            <option value="all">All Status</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+
+          <!-- COUNTRY -->
+          <select id="country" onchange="onCountryChange()">
+            <option value="all">All Country</option>
+          </select>
+
+          <!-- REGION -->
+          <select id="region" onchange="loadUsers()" style="display: none">
+            <option value="all">All Region</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- LIST -->
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Role</th>
+              <th>Country</th>
+              <th>Region</th>
+              <th>Active</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+
+          <tbody id="body"></tbody>
+        </table>
+
+        <div class="mobile-card" id="mobile"></div>
+      </div>
+    </div>
+
+    <script>
+      let users = [];
+
+      // =========================
+      // LOAD COUNTRIES
+      // =========================
+      async function loadCountries() {
+        try {
+          const res = await fetch("/api/countries");
+          const json = await res.json();
+
+          const sel = document.getElementById("country");
+
+          sel.innerHTML = `
+            <option value="all">All Country</option>
+          `;
+
+          (json.data || []).forEach((c) => {
+            sel.innerHTML += `
+              <option value="${c.code}">
+                ${c.name}
+              </option>
+            `;
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // =========================
+      // COUNTRY CHANGE
+      // =========================
+      async function onCountryChange() {
+        const country = document.getElementById("country").value;
+        const regionSel = document.getElementById("region");
+
+        // RESET
+        regionSel.innerHTML = `
+          <option value="all">All Region</option>
+        `;
+
+        // COUNTRY = ALL
+        if (country === "all") {
+          regionSel.style.display = "none";
+
+          await loadUsers();
+
+          return;
+        }
+
+        // LOAD REGIONS
+        try {
+          const res = await fetch(`/api/regions?country_code=${country}`);
+
+          const json = await res.json();
+
+          (json.data || []).forEach((r) => {
+            regionSel.innerHTML += `
+              <option value="${r.code}">
+                ${r.name}
+              </option>
+            `;
+          });
+
+          regionSel.style.display = "block";
+        } catch (e) {
+          console.error(e);
+        }
+
+        await loadUsers();
+      }
+
+      // =========================
+      // LOAD USERS
+      // =========================
+      async function loadUsers() {
+        const role = document.getElementById("role").value;
+        const active = document.getElementById("active").value;
+        const country = document.getElementById("country").value;
+        const region = document.getElementById("region").value;
+
+        const url = new URL("/api/users/list", window.location.origin);
+
+        // COUNTRY
+        if (country && country !== "all") {
+          url.searchParams.append("country_code", country);
+        }
+
+        // REGION
+        if (region && region !== "all") {
+          url.searchParams.append("region_code", region);
+        }
+
+        // ROLE
+        if (role && role !== "all") {
+          url.searchParams.append("role", role);
+        }
+
+        // ACTIVE
+        if (active && active !== "all") {
+          url.searchParams.append("active", active);
+        }
+
+        try {
+          const res = await fetch(url);
+          const json = await res.json();
+
+          users = json.data || [];
+
+          render();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // =========================
+      // RENDER
+      // =========================
+      function render() {
+        let html = "";
+
+        users.forEach((u) => {
+          html += `
+            <tr>
+              <td>${u.name || "-"}</td>
+
+              <td>${u.phone || "-"}</td>
+
+              <td>
+                <span class="badge ${u.role}">
+                  ${u.role || "-"}
+                </span>
+              </td>
+
+              <td>${u.country_code || "-"}</td>
+
+              <td>${u.region_code || "-"}</td>
+
+              <td>
+                <span class="badge ${u.is_active ? "active" : "inactive"}">
+                  ${u.is_active ? "YES" : "NO"}
+                </span>
+              </td>
+
+              <td>
+                ${u.created_at || "-"}
+              </td>
+            </tr>
+          `;
+        });
+
+        document.getElementById("body").innerHTML = html;
+
+        // MOBILE
+        let mobile = "";
+
+        users.forEach((u) => {
+          mobile += `
+            <div class="user-box">
+
+              <b>${u.name || "-"}</b>
+
+              <div class="small">
+                📞 ${u.phone || "-"}
+              </div>
+
+              <div class="small">
+                👤
+                <span class="badge ${u.role}">
+                  ${u.role || "-"}
+                </span>
+              </div>
+
+              <div class="small">
+                🌍 ${u.country_code || "-"}
+              </div>
+
+              <div class="small">
+                🗺 ${u.region_code || "-"}
+              </div>
+
+              <div class="small">
+                ${u.is_active ? "ACTIVE" : "INACTIVE"}
+              </div>
+
+            </div>
+          `;
+        });
+
+        document.getElementById("mobile").innerHTML = mobile;
+      }
+
+      // =========================
+      // NAVIGATION
+      // =========================
+      function go(path) {
+        location.href = path;
+      }
+
+      // =========================
+      // INIT
+      // =========================
+      window.onload = async () => {
+        await loadCountries();
+        await loadUsers();
+      };
+    </script>
+  </body>
+</html>

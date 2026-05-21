@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Admin</title>
+    <style>
+      body {
+        font-family: Arial;
+        background: #0b2e4a;
+        color: white;
+        padding: 20px;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+      }
+      button {
+        padding: 8px;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button onclick="location.href = '/'">← Back</button>
+
+    <div class="card">
+      <h3>Countries</h3>
+      <input id="c" />
+      <button onclick="addC()">Add</button>
+      <div id="clist"></div>
+    </div>
+
+    <div class="card">
+      <h3>Regions</h3>
+      <input id="r" />
+      <button onclick="addR()">Add</button>
+      <div id="rlist"></div>
+    </div>
+
+    <script>
+      let countries = [];
+      let regions = [];
+
+      function addC() {
+        countries.push(document.getElementById("c").value);
+        render();
+      }
+
+      function addR() {
+        regions.push(document.getElementById("r").value);
+        render();
+      }
+
+      function render() {
+        document.getElementById("clist").innerHTML = countries.join("<br>");
+        document.getElementById("rlist").innerHTML = regions.join("<br>");
+      }
+
+      render();
+    </script>
+  </body>
+</html>
