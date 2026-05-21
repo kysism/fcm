@@ -45,7 +45,6 @@ const sendToDevice = async (payload) => {
   return await admin.messaging().send({
     token: token,
 
-    // ⭐ 이거 추가 (핵심)
     notification: {
       title: data.title,
       body: data.body,

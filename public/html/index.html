@@ -313,7 +313,16 @@
             body: JSON.stringify({
               message: {
                 token: u.fcm_token,
-                data: { title, body, level },
+
+                data: {
+                  title: title,
+                  body: body,
+                  level: String(level),
+                },
+
+                android: {
+                  priority: "high",
+                },
               },
             }),
           });

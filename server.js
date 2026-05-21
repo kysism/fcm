@@ -11,6 +11,7 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/countries", require("./routes/countryRoutes"));
 app.use("/api/regions", require("./routes/regionRoutes"));
 app.use("/api/fcm", require("./routes/fcmRoutes"));
+app.use("/api/push-messages", require("./routes/pushMessageRoutes"));
 
 /* ROOT EXPLICIT */
 app.get("/", (req, res) => {
