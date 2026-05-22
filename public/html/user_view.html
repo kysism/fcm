@@ -282,9 +282,10 @@
         const country = document.getElementById("country").value;
         const region = document.getElementById("region")?.value || "all";
         const role = document.getElementById("role").value;
+        const active = document.getElementById("active").value;
 
         // =========================
-        // country 없으면 요청 자체 금지
+        // country 없으면 요청 금지
         // =========================
         if (!country || country === "all") {
           users = [];
@@ -302,6 +303,10 @@
 
         if (role !== "all") {
           url.searchParams.append("role", role);
+        }
+
+        if (active !== "all") {
+          url.searchParams.append("is_active", active);
         }
 
         const res = await fetch(url);

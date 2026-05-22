@@ -141,16 +141,16 @@ exports.getUserByToken = async (req, res) => {
 // ===============================
 exports.getUsers = async (req, res) => {
   try {
-    let { country_code, region_code, role } = req.query;
+    const { country_code, region_code, role, is_active } = req.query;
 
     // =========================
-    // ❗ COUNTRY 없으면 조회 금지
+    // 1. country 필수 (핵심 요구사항)
     // =========================
     if (!country_code || country_code === "all") {
       return res.json({
         success: true,
-        count: 0,
         data: [],
+        message: "country_code is required",
       });
     }
 
@@ -165,14 +165,15 @@ exports.getUsers = async (req, res) => {
         region_code,
         role,
         is_active,
-        device_tokens (token)
+        created_at,
+        device_tokens(token)
       `,
       )
       .eq("country_code", country_code)
       .order("name", { ascending: true });
 
     // =========================
-    // optional filters
+    // 2. optional filters
     // =========================
     if (region_code && region_code !== "all") {
       query = query.eq("region_code", region_code);
@@ -180,6 +181,10 @@ exports.getUsers = async (req, res) => {
 
     if (role && role !== "all") {
       query = query.eq("role", role);
+    }
+
+    if (is_active && is_active !== "all") {
+      query = query.eq("is_active", is_active === "true");
     }
 
     const { data, error } = await query;
@@ -197,6 +202,7 @@ exports.getUsers = async (req, res) => {
       data: result,
     });
   } catch (err) {
+    console.error("GET USERS ERROR:", err);
     return res.status(500).json({
       success: false,
       message: err.message,
