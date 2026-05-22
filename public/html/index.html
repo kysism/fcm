@@ -358,6 +358,11 @@
           return;
         }
 
+        if (selected.length === 0) {
+          alert("최소 1명 이상 선택하세요.");
+          return;
+        }
+
         if (!level) {
           alert("레벨을 선택하세요.");
           return;
