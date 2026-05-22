@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>KOICA Emergency Control Center</title>
 
@@ -17,82 +17,152 @@
         font-family: Arial;
       }
 
-      .box {
-        width: 400px;
+      .login-box {
+        width: 420px;
         background: white;
+        border-radius: 20px;
         padding: 40px;
-        border-radius: 18px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
       }
 
-      h1 {
-        margin: 0 0 30px;
+      .logo {
         text-align: center;
-        color: #1e5f8c;
-        font-size: 28px;
+        margin-bottom: 30px;
       }
 
-      input {
-        width: 100%;
-        padding: 14px;
-        border-radius: 10px;
-        border: 1px solid #ccc;
-        margin-bottom: 20px;
-        box-sizing: border-box;
+      .logo img {
+        width: 120px;
+      }
+
+      .title {
+        text-align: center;
+        font-size: 28px;
+        font-weight: bold;
+        color: #1e5f8c;
+        margin-bottom: 35px;
       }
 
       button {
         width: 100%;
-        height: 52px;
+        height: 58px;
         border: none;
-        border-radius: 12px;
-        background: #1e5f8c;
-        color: white;
+        border-radius: 14px;
+        cursor: pointer;
         font-size: 18px;
         font-weight: bold;
-        cursor: pointer;
-        margin-bottom: 10px;
       }
 
-      .password-box {
+      .btn-generate {
+        background: linear-gradient(135deg, #1565c0, #0d47a1);
+        color: white;
+      }
+
+      .btn-login {
+        background: linear-gradient(135deg, #c62828, #8e0000);
+        color: white;
+        margin-top: 15px;
+      }
+
+      .login-area {
+        display: none;
+        margin-top: 25px;
+      }
+
+      input {
+        width: 100%;
+        height: 55px;
+        border-radius: 12px;
+        border: 1px solid #ccc;
+        padding: 0 15px;
+        font-size: 18px;
+        box-sizing: border-box;
+      }
+
+      .message {
         margin-top: 20px;
-        background: #f5f5f5;
-        padding: 14px;
-        border-radius: 10px;
         text-align: center;
-        font-size: 22px;
-        font-weight: bold;
-        color: #c62828;
+        color: #666;
+        font-size: 14px;
       }
     </style>
   </head>
 
   <body>
-    <div class="box">
-      <h1>KOICA Emergency Control Center</h1>
+    <div class="login-box">
+      <div class="logo">
+        <img src="/img/koica.png" />
+      </div>
 
-      <input type="password" id="password" placeholder="Admin Password" />
+      <div class="title">KOICA Emergency Control Center</div>
 
-      <button onclick="login()">LOGIN</button>
+      <!-- STEP 1 -->
+      <button class="btn-generate" onclick="generatePassword()">
+        GENERATE RANDOM PASSWORD
+      </button>
 
-      <button onclick="generate()">GENERATE RANDOM PASSWORD</button>
+      <!-- STEP 2 -->
+      <div class="login-area" id="loginArea">
+        <input
+          type="password"
+          id="password"
+          placeholder="Enter Admin Password"
+        />
 
-      <div class="password-box" id="generated">-</div>
+        <button class="btn-login" onclick="login()">LOGIN</button>
+      </div>
+
+      <div class="message" id="message">
+        Admin password will be sent by push notification.
+      </div>
     </div>
 
-    <script src="/html/js/common.js"></script>
     <script>
       const API = "https://fcm-61ns.onrender.com/api";
 
+      // =========================
+      // GENERATE PASSWORD
+      // =========================
+      async function generatePassword() {
+        const res = await fetch(`${API}/auth/generate`, {
+          method: "POST",
+        });
+
+        const json = await res.json();
+
+        if (!json.success) {
+          alert("FAILED");
+          return;
+        }
+
+        // 기존 세션 제거
+        sessionStorage.removeItem("koica_admin_password");
+
+        // 로그인 영역 표시
+        document.getElementById("loginArea").style.display = "block";
+
+        document.getElementById("message").innerText =
+          "Password has been sent to admin devices.";
+      }
+
+      // =========================
+      // LOGIN
+      // =========================
       async function login() {
         const password = document.getElementById("password").value;
+
+        if (!password) {
+          alert("Enter password");
+          return;
+        }
 
         const res = await fetch(`${API}/auth/verify`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ password }),
+          body: JSON.stringify({
+            password,
+          }),
         });
 
         const json = await res.json();
@@ -105,20 +175,6 @@
         sessionStorage.setItem("koica_admin_password", password);
 
         location.href = "/html/index.html";
-      }
-
-      async function generate() {
-        const res = await fetch(`${API}/auth/generate`, {
-          method: "POST",
-        });
-
-        const json = await res.json();
-
-        if (json.success) {
-          alert("New admin password has been sent to admin users.");
-
-          sessionStorage.removeItem("koica_admin_password");
-        }
       }
     </script>
   </body>
