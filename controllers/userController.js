@@ -141,7 +141,18 @@ exports.getUserByToken = async (req, res) => {
 // ===============================
 exports.getUsers = async (req, res) => {
   try {
-    const { country_code, region_code, role } = req.query;
+    let { country_code, region_code, role } = req.query;
+
+    // =========================
+    // ❗ COUNTRY 없으면 조회 금지
+    // =========================
+    if (!country_code || country_code === "all") {
+      return res.json({
+        success: true,
+        count: 0,
+        data: [],
+      });
+    }
 
     let query = supabase
       .from("users")
@@ -154,25 +165,20 @@ exports.getUsers = async (req, res) => {
         region_code,
         role,
         is_active,
-        device_tokens (
-          token
-        )
+        device_tokens (token)
       `,
       )
+      .eq("country_code", country_code)
       .order("name", { ascending: true });
 
-    if (country_code) {
-      //} && country_code !== "all") {
-      query = query.eq("country_code", country_code);
-    }
-
-    if (region_code) {
-      // && region_code !== "all") {
+    // =========================
+    // optional filters
+    // =========================
+    if (region_code && region_code !== "all") {
       query = query.eq("region_code", region_code);
     }
 
-    if (role) {
-      // && role !== "all") {
+    if (role && role !== "all") {
       query = query.eq("role", role);
     }
 
@@ -191,7 +197,6 @@ exports.getUsers = async (req, res) => {
       data: result,
     });
   } catch (err) {
-    console.error("GET USERS ERROR:", err);
     return res.status(500).json({
       success: false,
       message: err.message,

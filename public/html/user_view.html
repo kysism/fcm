@@ -279,43 +279,36 @@
       // LOAD USERS
       // =========================
       async function loadUsers() {
-        const role = document.getElementById("role").value;
-        const active = document.getElementById("active").value;
         const country = document.getElementById("country").value;
-        const region = document.getElementById("region").value;
+        const region = document.getElementById("region")?.value || "all";
+        const role = document.getElementById("role").value;
 
-        const url = new URL("/api/users/list", window.location.origin);
-
-        // COUNTRY
-        if (country && country !== "all") {
-          url.searchParams.append("country_code", country);
+        // =========================
+        // country 없으면 요청 자체 금지
+        // =========================
+        if (!country || country === "all") {
+          users = [];
+          renderUsers([]);
+          return;
         }
 
-        // REGION
-        if (region && region !== "all") {
+        const url = new URL(`${API}/users/list`);
+
+        url.searchParams.append("country_code", country);
+
+        if (region !== "all") {
           url.searchParams.append("region_code", region);
         }
 
-        // ROLE
-        if (role && role !== "all") {
+        if (role !== "all") {
           url.searchParams.append("role", role);
         }
 
-        // ACTIVE
-        if (active && active !== "all") {
-          url.searchParams.append("active", active);
-        }
+        const res = await fetch(url);
+        const json = await res.json();
 
-        try {
-          const res = await fetch(url);
-          const json = await res.json();
-
-          users = json.data || [];
-
-          render();
-        } catch (e) {
-          console.error(e);
-        }
+        users = json.data || [];
+        renderUsers(users);
       }
 
       // =========================
