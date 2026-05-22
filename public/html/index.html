@@ -341,39 +341,67 @@
       // =====================
       async function send() {
         const title = document.getElementById("title").value;
+
         const body = document.getElementById("body").value;
-        const level = document.getElementById("level").value;
+
+        const level = Number(document.getElementById("level").value);
+
+        const country_code =
+          document.getElementById("country").value === "all"
+            ? null
+            : document.getElementById("country").value;
+
+        const region_code =
+          document.getElementById("region")?.value === "all"
+            ? null
+            : document.getElementById("region")?.value;
 
         const targets = selected.length ? selected : filteredUsers;
 
-        // push_messages 로그 1회 저장 (중요)
-        await fetch(`${API}/push_messages`, {
+        // =====================
+        // PUSH LOG SAVE
+        // =====================
+        await fetch(`${API}/push-messages`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
           body: JSON.stringify({
             title,
             body,
-            level: String(level),
-            country_code: document.getElementById("country").value,
-            region_code: document.getElementById("region").value,
+            level,
+            country_code,
+            region_code,
           }),
         });
 
+        // =====================
+        // FCM SEND
+        // =====================
         for (const u of targets) {
           if (!u.fcm_token) continue;
 
           await fetch(`${API}/fcm/send`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
             body: JSON.stringify({
               message: {
                 token: u.fcm_token,
+
                 data: {
-                  title: title,
-                  body: body,
+                  title,
+                  body,
                   level: String(level),
-                  country_code: document.getElementById("country").value,
-                  region_code: document.getElementById("region").value,
+
+                  country_code: country_code || "",
+
+                  region_code: region_code || "",
                 },
               },
             }),
