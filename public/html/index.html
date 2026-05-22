@@ -346,7 +346,7 @@
 
         const targets = selected.length ? selected : filteredUsers;
 
-        // 🔥 push_messages 로그 1회 저장 (중요)
+        // push_messages 로그 1회 저장 (중요)
         await fetch(`${API}/push_messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

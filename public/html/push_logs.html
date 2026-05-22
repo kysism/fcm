@@ -57,6 +57,13 @@
         padding: 10px;
         text-align: left;
       }
+
+      select {
+        padding: 8px;
+        margin-right: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+      }
     </style>
   </head>
 
@@ -72,6 +79,34 @@
         <h2>📡 Push Logs</h2>
       </div>
 
+      <!--  FILTER UI (여기가 핵심 추가 위치) -->
+      <div class="card">
+        <h3>Filter</h3>
+
+        <select id="year" onchange="loadLogs()">
+          <option value="">ALL YEAR</option>
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+
+        <select id="month" onchange="loadLogs()">
+          <option value="">ALL MONTH</option>
+          <option value="01">01</option>
+          <option value="02">02</option>
+          <option value="03">03</option>
+          <option value="04">04</option>
+          <option value="05">05</option>
+          <option value="06">06</option>
+          <option value="07">07</option>
+          <option value="08">08</option>
+          <option value="09">09</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+        </select>
+      </div>
+
       <!-- LIST -->
       <div class="card">
         <table class="table">
@@ -81,7 +116,7 @@
               <th>Title</th>
               <th>Body</th>
               <th>Level</th>
-              <th>Target</th>
+              <th>Country</th>
             </tr>
           </thead>
           <tbody id="logBody"></tbody>
@@ -89,24 +124,46 @@
       </div>
     </div>
 
-    <script src="/js/common.js"></script>
     <script>
-      /* MOCK LOGS */
+      const API = "https://fcm-61ns.onrender.com/api";
+
       let logs = [];
 
+      // =========================
+      // LOAD LOGS (DB)
+      // =========================
+      async function loadLogs() {
+        const year = document.getElementById("year").value;
+        const month = document.getElementById("month").value;
+
+        let url = new URL(`${API}/push-messages`);
+
+        if (year) url.searchParams.append("year", year);
+        if (month) url.searchParams.append("month", month);
+
+        const res = await fetch(url);
+        const json = await res.json();
+
+        logs = json.data || [];
+        render();
+      }
+
+      // =========================
+      // RENDER TABLE
+      // =========================
       function render() {
         let html = "";
 
         logs.forEach((l) => {
           html += `
-        <tr>
-          <td>${l.time}</td>
-          <td>${l.title}</td>
-          <td>${l.body}</td>
-          <td>${l.level}</td>
-          <td>${l.target}</td>
-        </tr>
-      `;
+            <tr>
+              <td>${new Date(l.created_at).toLocaleString()}</td>
+              <td>${l.title || ""}</td>
+              <td>${l.body || ""}</td>
+              <td>${l.level || ""}</td>
+              <td>${l.country_code || ""}</td>
+            </tr>
+          `;
         });
 
         document.getElementById("logBody").innerHTML = html;
@@ -116,11 +173,15 @@
         location.href = p;
       }
 
-      render();
-
+      // =========================
+      // INIT
+      // =========================
       window.onload = async () => {
         await verifyLogin();
+        await loadLogs(); //  최초 로딩
       };
     </script>
+
+    <script src="/js/common.js"></script>
   </body>
 </html>
