@@ -161,15 +161,18 @@ exports.getUsers = async (req, res) => {
       )
       .order("name", { ascending: true });
 
-    if (country_code && country_code !== "all") {
+    if (country_code) {
+      //} && country_code !== "all") {
       query = query.eq("country_code", country_code);
     }
 
-    if (region_code && region_code !== "all") {
+    if (region_code) {
+      // && region_code !== "all") {
       query = query.eq("region_code", region_code);
     }
 
-    if (role && role !== "all") {
+    if (role) {
+      // && role !== "all") {
       query = query.eq("role", role);
     }
 
