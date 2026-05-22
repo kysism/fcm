@@ -85,9 +85,9 @@
 
         <select id="year" onchange="loadLogs()">
           <option value="">ALL YEAR</option>
-          <option value="2024">2024</option>
-          <option value="2025">2025</option>
           <option value="2026">2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
         </select>
 
         <select id="month" onchange="loadLogs()">
@@ -124,6 +124,7 @@
       </div>
     </div>
 
+    <script src="/js/common.js"></script>
     <script>
       const API = "https://fcm-61ns.onrender.com/api";
 
@@ -138,8 +139,37 @@
 
         let url = new URL(`${API}/push-messages`);
 
-        if (year) url.searchParams.append("year", year);
-        if (month) url.searchParams.append("month", month);
+        const hasYear = year && year !== "";
+        const hasMonth = month && month !== "";
+
+        // =========================
+        // CASE 1: 둘 다 없음 → 전체
+        // =========================
+        if (!hasYear && !hasMonth) {
+          // 그대로 전체 조회
+        }
+
+        // =========================
+        // CASE 2: year만 있음
+        // =========================
+        else if (hasYear && !hasMonth) {
+          url.searchParams.append("year", year);
+        }
+
+        // =========================
+        // CASE 3: month만 있음
+        // =========================
+        else if (!hasYear && hasMonth) {
+          url.searchParams.append("month", month);
+        }
+
+        // =========================
+        // CASE 4: 둘 다 있음
+        // =========================
+        else {
+          url.searchParams.append("year", year);
+          url.searchParams.append("month", month);
+        }
 
         const res = await fetch(url);
         const json = await res.json();
@@ -181,7 +211,5 @@
         await loadLogs(); //  최초 로딩
       };
     </script>
-
-    <script src="/js/common.js"></script>
   </body>
 </html>

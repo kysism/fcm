@@ -1,4 +1,5 @@
 async function verifyLogin() {
+  const API = "https://fcm-61ns.onrender.com/api";
   const password = sessionStorage.getItem("koica_admin_password");
 
   if (!password) {
