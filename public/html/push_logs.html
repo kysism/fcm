@@ -190,8 +190,8 @@
               <td>${new Date(l.created_at).toLocaleString()}</td>
               <td>${l.title || ""}</td>
               <td>${l.body || ""}</td>
-              <td>${l.level || ""}</td>
-              <td>${l.country_code || ""}</td>
+              <td>${l.level_text || l.level + " Level"}</td>
+              <td>${l.country_name || ""} / ${l.region_name || ""}</td>
             </tr>
           `;
         });
@@ -208,7 +208,6 @@
       // =========================
       window.onload = async () => {
         await verifyLogin();
-        await loadLogs(); //  최초 로딩
       };
     </script>
   </body>

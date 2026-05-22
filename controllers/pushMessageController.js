@@ -44,36 +44,57 @@ exports.getMessages = async (req, res) => {
 
     let query = supabase
       .from("push_messages")
-      .select("*")
+      .select(
+        `
+        id,
+        title,
+        body,
+        level,
+        created_at,
+        country_code,
+        region_code,
+        countries (
+          name
+        ),
+        regions (
+          name
+        )
+      `,
+      )
       .order("created_at", { ascending: false });
 
-    // year filter
-    if (year) {
+    // =====================
+    // FILTER
+    // =====================
+    if (year && month) {
+      query = query
+        .gte("created_at", `${year}-${month}-01`)
+        .lte("created_at", `${year}-${month}-31`);
+    } else if (year) {
       query = query
         .gte("created_at", `${year}-01-01`)
         .lte("created_at", `${year}-12-31`);
-    }
-
-    // month filter (YYYY-MM)
-    if (year && month) {
-      const start = `${year}-${month}-01`;
-      const end = `${year}-${month}-31`;
-
-      query = supabase
-        .from("push_messages")
-        .select("*")
-        .gte("created_at", start)
-        .lte("created_at", end)
-        .order("created_at", { ascending: false });
+    } else if (month) {
+      query = query.ilike("created_at", `%-${month}-%`);
     }
 
     const { data, error } = await query;
 
     if (error) throw error;
 
+    // =====================
+    // FORMAT DATA
+    // =====================
+    const result = data.map((item) => ({
+      ...item,
+      level_text: `${item.level} Level`,
+      country_name: item.countries?.name || "",
+      region_name: item.regions?.name || "",
+    }));
+
     return res.json({
       success: true,
-      data,
+      data: result,
     });
   } catch (err) {
     return res.status(500).json({
