@@ -344,24 +344,35 @@
 
         const body = document.getElementById("body").value;
 
-        const level = Number(document.getElementById("level").value);
+        const level = parseInt(document.getElementById("level").value);
 
-        const country_code =
-          document.getElementById("country").value === "all"
-            ? null
-            : document.getElementById("country").value;
+        const country = document.getElementById("country").value;
 
-        const region_code =
-          document.getElementById("region")?.value === "all"
-            ? null
-            : document.getElementById("region")?.value;
+        const region = document.getElementById("region")?.value;
+
+        // =====================
+        // VALIDATION
+        // =====================
+        if (!country || country === "all") {
+          alert("국가를 선택하세요.");
+          return;
+        }
+
+        if (!level) {
+          alert("레벨을 선택하세요.");
+          return;
+        }
+
+        const country_code = country;
+
+        const region_code = !region || region === "all" ? null : region;
 
         const targets = selected.length ? selected : filteredUsers;
 
         // =====================
-        // PUSH LOG SAVE
+        // LOG SAVE
         // =====================
-        await fetch(`${API}/push-messages`, {
+        const saveRes = await fetch(`${API}/push-messages`, {
           method: "POST",
 
           headers: {
@@ -376,6 +387,10 @@
             region_code,
           }),
         });
+
+        const saveJson = await saveRes.json();
+
+        console.log(saveJson);
 
         // =====================
         // FCM SEND
@@ -399,8 +414,7 @@
                   body,
                   level: String(level),
 
-                  country_code: country_code || "",
-
+                  country_code,
                   region_code: region_code || "",
                 },
               },
