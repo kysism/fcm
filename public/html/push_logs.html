@@ -99,14 +99,14 @@
 
         logs.forEach((l) => {
           html += `
-      <tr>
-        <td>${l.time}</td>
-        <td>${l.title}</td>
-        <td>${l.body}</td>
-        <td>${l.level}</td>
-        <td>${l.target}</td>
-      </tr>
-    `;
+        <tr>
+          <td>${l.time}</td>
+          <td>${l.title}</td>
+          <td>${l.body}</td>
+          <td>${l.level}</td>
+          <td>${l.target}</td>
+        </tr>
+      `;
         });
 
         document.getElementById("logBody").innerHTML = html;
@@ -117,6 +117,10 @@
       }
 
       render();
+
+      window.onload = async () => {
+        await verifyLogin();
+      };
     </script>
   </body>
 </html>

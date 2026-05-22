@@ -406,6 +406,8 @@
       // INIT
       // =========================
       window.onload = async () => {
+        await verifyLogin();
+
         await loadCountries();
         await loadUsers();
       };

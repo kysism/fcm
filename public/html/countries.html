@@ -390,6 +390,10 @@
 
       // INIT
       loadCountries();
+
+      window.onload = async () => {
+        await verifyLogin();
+      };
     </script>
   </body>
 </html>

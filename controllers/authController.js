@@ -43,7 +43,7 @@ exports.generatePassword = async (req, res) => {
           data: {
             title: "ADMIN PASSWORD",
             body: `Password: ${currentPassword}`,
-            level: "2",
+            level: "3",
           },
 
           android: {
