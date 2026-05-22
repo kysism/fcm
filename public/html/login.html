@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>KOICA Emergency Control Center</title>
+
+    <style>
+      body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #0b2e4a, #1e5f8c);
+        font-family: Arial;
+      }
+
+      .box {
+        width: 400px;
+        background: white;
+        padding: 40px;
+        border-radius: 18px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      h1 {
+        margin: 0 0 30px;
+        text-align: center;
+        color: #1e5f8c;
+        font-size: 28px;
+      }
+
+      input {
+        width: 100%;
+        padding: 14px;
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+        box-sizing: border-box;
+      }
+
+      button {
+        width: 100%;
+        height: 52px;
+        border: none;
+        border-radius: 12px;
+        background: #1e5f8c;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-bottom: 10px;
+      }
+
+      .password-box {
+        margin-top: 20px;
+        background: #f5f5f5;
+        padding: 14px;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+        color: #c62828;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="box">
+      <h1>KOICA Emergency Control Center</h1>
+
+      <input type="password" id="password" placeholder="Admin Password" />
+
+      <button onclick="login()">LOGIN</button>
+
+      <button onclick="generate()">GENERATE RANDOM PASSWORD</button>
+
+      <div class="password-box" id="generated">-</div>
+    </div>
+
+    <script src="/html/js/common.js"></script>
+    <script>
+      const API = "https://fcm-61ns.onrender.com/api";
+
+      async function login() {
+        const password = document.getElementById("password").value;
+
+        const res = await fetch(`${API}/auth/verify`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ password }),
+        });
+
+        const json = await res.json();
+
+        if (!json.success) {
+          alert("INVALID PASSWORD");
+          return;
+        }
+
+        sessionStorage.setItem("koica_admin_password", password);
+
+        location.href = "/index.html";
+      }
+
+      async function generate() {
+        const res = await fetch(`${API}/auth/generate`, {
+          method: "POST",
+        });
+
+        const json = await res.json();
+
+        if (json.success) {
+          alert("New admin password has been sent to admin users.");
+
+          sessionStorage.removeItem("koica_admin_password");
+        }
+      }
+    </script>
+  </body>
+</html>

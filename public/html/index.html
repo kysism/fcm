@@ -199,6 +199,7 @@
       </div>
     </div>
 
+    <script src="/html/js/common.js"></script>
     <script>
       const API = "https://fcm-61ns.onrender.com/api";
 
@@ -309,7 +310,12 @@
         location.href = page;
       }
 
-      window.onload = loadUsers;
+      window.onload = async () => {
+        await verifyLogin();
+
+        await loadCountries();
+        await loadUsers();
+      };
     </script>
   </body>
 </html>
