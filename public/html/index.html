@@ -340,9 +340,9 @@
       // SEND + LOG
       // =====================
       async function send() {
-        const title = document.getElementById("title").value;
+        const title = document.getElementById("title").value.trim();
 
-        const body = document.getElementById("body").value;
+        const body = document.getElementById("body").value.trim();
 
         const level = parseInt(document.getElementById("level").value);
 
@@ -360,6 +360,16 @@
 
         if (!level) {
           alert("레벨을 선택하세요.");
+          return;
+        }
+
+        if (!title) {
+          alert("타이틀을 입력하세요.");
+          return;
+        }
+
+        if (!body) {
+          alert("메시지를 입력하세요.");
           return;
         }
 
