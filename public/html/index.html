@@ -423,7 +423,7 @@
 
         const saveJson = await saveRes.json();
 
-        console.log(saveJson);
+        // console.log(saveJson);
 
         // =====================
         // FCM SEND
@@ -456,6 +456,33 @@
         }
 
         alert("전송 완료");
+
+        // 선택항목 초기화
+        resetForm();
+      }
+
+      function resetForm() {
+        // 1. 선택 초기화
+        selected = [];
+
+        // 2. 체크박스 UI 초기화
+        document
+          .querySelectorAll("#userList input[type='checkbox']")
+          .forEach((cb) => (cb.checked = false));
+
+        // 3. 입력값 초기화
+        document.getElementById("title").value = "";
+        document.getElementById("body").value = "";
+
+        // 4. level 초기화 (기본값 1)
+        document.getElementById("level").value = "1";
+
+        // 5. 국가
+        document.getElementById("country").value = "all";
+
+        // 6. 지역
+        document.getElementById("region").innerHTML =
+          `<option value="all">전체</option>`;
       }
 
       function go(page) {
