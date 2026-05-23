@@ -279,6 +279,19 @@
       async function loadUsers() {
         const country = document.getElementById("country").value;
 
+        // =========================
+        // COUNTRY REQUIRED
+        // =========================
+        if (!country || country === "all") {
+          users = [];
+          filteredUsers = [];
+          selected = [];
+
+          renderUsers([]);
+
+          return;
+        }
+
         const region = document.getElementById("region")?.value || "all";
 
         const role = document.getElementById("role").value;
@@ -287,9 +300,13 @@
 
         url.searchParams.append("country_code", country);
 
-        url.searchParams.append("region_code", region);
+        if (region !== "all") {
+          url.searchParams.append("region_code", region);
+        }
 
-        url.searchParams.append("role", role);
+        if (role !== "all") {
+          url.searchParams.append("role", role);
+        }
 
         const res = await fetch(url);
         const json = await res.json();
