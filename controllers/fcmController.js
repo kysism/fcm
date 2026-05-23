@@ -8,17 +8,8 @@ exports.sendPush = async (req, res) => {
   try {
     const payload = req.body;
 
-    // FCM SEND
+    // FCM SEND ONLY
     const result = await sendToDevice(payload);
-
-    // SAVE LOG
-    await supabase.from("push_messages").insert({
-      title: payload.message.data.title,
-      body: payload.message.data.body,
-      country_code: payload.country_code || null,
-      region_code: payload.region_code || null,
-      created_by: "admin",
-    });
 
     return res.send({
       success: true,
