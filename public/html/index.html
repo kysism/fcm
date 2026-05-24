@@ -254,7 +254,14 @@
         const regionSel = document.getElementById("region");
 
         regionSel.innerHTML = `<option value="all">전체</option>`;
+
         selected = [];
+
+        const selectAll = document.getElementById("selectAll");
+        if (selectAll) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+        }
 
         if (country === "all") {
           regionCard.style.display = "none";
@@ -269,10 +276,10 @@
 
         (json.data || []).forEach((r) => {
           regionSel.innerHTML += `
-        <option value="${r.code}">
-          ${r.name}
-        </option>
-      `;
+      <option value="${r.code}">
+        ${r.name}
+      </option>
+    `;
         });
 
         await loadUsers();
@@ -283,6 +290,13 @@
       // =========================
       async function onRegionChange() {
         selected = [];
+
+        const selectAll = document.getElementById("selectAll");
+        if (selectAll) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+        }
+
         await loadUsers();
       }
 
@@ -340,16 +354,21 @@
         box.innerHTML = "";
 
         list.forEach((u) => {
+          const checked = selected.some((s) => s.id === u.id);
+
           box.innerHTML += `
-        <div class="user-item">
-          <span>${u.name} (${u.role})</span>
-          <input type="checkbox"
-            onchange="toggle('${u.id}')"/>
-        </div>
-      `;
+      <div class="user-item">
+        <span>${u.name} (${u.role})</span>
+        <input type="checkbox"
+          ${checked ? "checked" : ""}
+          onchange="toggle('${u.id}')"/>
+      </div>
+    `;
         });
 
         count.innerText = `총 ${list.length}명`;
+
+        syncSelectAll();
       }
 
       // =========================
@@ -364,6 +383,8 @@
         } else {
           selected.push(u);
         }
+
+        renderUsers(filteredUsers);
       }
 
       // =========================
