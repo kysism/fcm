@@ -176,7 +176,20 @@
 
       <!-- USERS -->
       <div class="card">
-        <h3>👥 Users</h3>
+        <h3
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <span>👥 Users</span>
+          <label style="font-size: 14px; font-weight: normal">
+            <input type="checkbox" id="selectAll" onchange="toggleAll(this)" />
+            전체 선택
+          </label>
+        </h3>
+
         <div class="userbox" id="userList"></div>
         <div class="count-box" id="countBox">총 0명</div>
       </div>
@@ -351,6 +364,44 @@
         } else {
           selected.push(u);
         }
+      }
+
+      // =========================
+      // 전체 선택
+      // =========================
+      function toggleAll(el) {
+        if (el.checked) {
+          selected = [...users];
+        } else {
+          selected = [];
+        }
+
+        renderUsers(filteredUsers);
+      }
+
+      // =========================
+      // 전체 상태 동기화
+      // =========================
+      function syncSelectAll() {
+        const selectAll = document.getElementById("selectAll");
+        if (!selectAll) return;
+
+        if (filteredUsers.length === 0) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+          return;
+        }
+
+        const all = filteredUsers.every((u) =>
+          selected.some((s) => s.id === u.id),
+        );
+
+        const none = filteredUsers.every(
+          (u) => !selected.some((s) => s.id === u.id),
+        );
+
+        selectAll.checked = all;
+        selectAll.indeterminate = !all && !none;
       }
 
       // =====================
