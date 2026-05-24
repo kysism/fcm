@@ -166,7 +166,7 @@
       <!-- ROLE -->
       <div class="card">
         <h3>👤 Role</h3>
-        <select id="role" onchange="loadUsers()">
+        <select id="role" onchange="onRoleChange()">
           <option value="all">전체</option>
           <option value="user">user</option>
           <option value="staff">staff</option>
@@ -289,6 +289,21 @@
       // REGION CHANGE
       // =========================
       async function onRegionChange() {
+        selected = [];
+
+        const selectAll = document.getElementById("selectAll");
+        if (selectAll) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+        }
+
+        await loadUsers();
+      }
+
+      // =========================
+      // ROLE CHANGE
+      // =========================
+      async function onRoleChange() {
         selected = [];
 
         const selectAll = document.getElementById("selectAll");
