@@ -534,6 +534,12 @@
         // 6. 지역
         document.getElementById("region").innerHTML =
           `<option value="all">전체</option>`;
+
+        const selectAll = document.getElementById("selectAll");
+        if (selectAll) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+        }
       }
 
       function go(page) {
