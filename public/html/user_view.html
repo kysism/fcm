@@ -150,17 +150,14 @@
       <!-- FILTER -->
       <div class="card">
         <div class="filters">
-          <!-- COUNTRY -->
           <select id="country" onchange="onCountryChange()">
             <option value="all">All Country</option>
           </select>
 
-          <!-- REGION -->
           <select id="region" onchange="loadUsers()" style="display: none">
             <option value="all">All Region</option>
           </select>
 
-          <!-- ROLE -->
           <select id="role" onchange="loadUsers()">
             <option value="all">All Role</option>
             <option value="user">User</option>
@@ -168,7 +165,6 @@
             <option value="admin">Admin</option>
           </select>
 
-          <!-- ACTIVE -->
           <select id="active" onchange="loadUsers()">
             <option value="all">All Status</option>
             <option value="true">Active</option>
@@ -216,9 +212,7 @@
 
           const sel = document.getElementById("country");
 
-          sel.innerHTML = `
-            <option value="all">All Country</option>
-          `;
+          sel.innerHTML = `<option value="all">All Country</option>`;
 
           (json.data || []).forEach((c) => {
             sel.innerHTML += `
@@ -237,29 +231,19 @@
       // =========================
       async function onCountryChange() {
         const country = document.getElementById("country").value;
-
         const regionSel = document.getElementById("region");
 
-        // RESET
-        regionSel.innerHTML = `
-          <option value="all">All Region</option>
-        `;
+        regionSel.innerHTML = `<option value="all">All Region</option>`;
 
-        // COUNTRY = ALL
         if (country === "all") {
           regionSel.style.display = "none";
-
           users = [];
-
           render();
-
           return;
         }
 
-        // LOAD REGIONS
         try {
           const res = await fetch(`${API}/regions?country_code=${country}`);
-
           const json = await res.json();
 
           (json.data || []).forEach((r) => {
@@ -284,58 +268,39 @@
       async function loadUsers() {
         try {
           const country = document.getElementById("country").value;
-
           const region = document.getElementById("region")?.value || "all";
-
           const role = document.getElementById("role").value;
-
           const active = document.getElementById("active").value;
 
-          // =========================
-          // COUNTRY REQUIRED
-          // =========================
           if (!country || country === "all") {
             users = [];
-
             render();
-
             return;
           }
 
           const url = new URL(`${API}/users/list`);
-
-          // REQUIRED
           url.searchParams.append("country_code", country);
 
-          // OPTIONAL
-          if (region && region !== "all") {
+          if (region !== "all") {
             url.searchParams.append("region_code", region);
           }
 
-          if (role && role !== "all") {
+          if (role !== "all") {
             url.searchParams.append("role", role);
           }
 
-          if (active && active !== "all") {
+          if (active !== "all") {
             url.searchParams.append("is_active", active);
           }
 
-          console.log(url.toString());
-
           const res = await fetch(url);
-
           const json = await res.json();
 
-          console.log(json);
-
           users = json.data || [];
-
           render();
         } catch (e) {
           console.error("loadUsers error:", e);
-
           users = [];
-
           render();
         }
       }
@@ -350,7 +315,6 @@
           html += `
             <tr>
               <td>${u.name || "-"}</td>
-
               <td>${u.phone || "-"}</td>
 
               <td>
@@ -359,9 +323,8 @@
                 </span>
               </td>
 
-              <td>${u.country_code || "-"}</td>
-
-              <td>${u.region_code || "-"}</td>
+              <td>${u.country_name || "-"}</td>
+              <td>${u.region_name || "-"}</td>
 
               <td>
                 <span class="badge ${u.is_active ? "active" : "inactive"}">
@@ -378,7 +341,6 @@
 
         document.getElementById("body").innerHTML = html;
 
-        // MOBILE
         let mobile = "";
 
         users.forEach((u) => {
@@ -387,23 +349,20 @@
 
               <b>${u.name || "-"}</b>
 
-              <div class="small">
-                📞 ${u.phone || "-"}
-              </div>
+              <div class="small">📞 ${u.phone || "-"}</div>
 
               <div class="small">
-                👤
-                <span class="badge ${u.role}">
+                👤 <span class="badge ${u.role}">
                   ${u.role || "-"}
                 </span>
               </div>
 
               <div class="small">
-                🌍 ${u.country_code || "-"}
+                🌍 ${u.country_name || "-"}
               </div>
 
               <div class="small">
-                🗺 ${u.region_code || "-"}
+                🗺 ${u.region_name || "-"}
               </div>
 
               <div class="small">
@@ -418,7 +377,7 @@
       }
 
       // =========================
-      // NAVIGATION
+      // NAV
       // =========================
       function go(path) {
         location.href = path;
@@ -429,7 +388,6 @@
       // =========================
       window.onload = async () => {
         await verifyLogin();
-
         await loadCountries();
       };
     </script>

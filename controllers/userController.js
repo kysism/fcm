@@ -96,7 +96,7 @@ exports.getUserByPhone = async (req, res) => {
 };
 
 // ===============================
-// GET USER BY TOKEN
+// GET USER BY TOKEN (JOIN USERS)
 // ===============================
 exports.getUserByToken = async (req, res) => {
   try {
@@ -137,14 +137,14 @@ exports.getUserByToken = async (req, res) => {
 };
 
 // ===============================
-// USERS LIST (JOIN DEVICE TOKEN)
+// USERS LIST (JOIN COUNTRY + REGION)
 // ===============================
 exports.getUsers = async (req, res) => {
   try {
     const { country_code, region_code, role, is_active } = req.query;
 
     // =========================
-    // 1. country 필수 (핵심 요구사항)
+    // COUNTRY REQUIRED
     // =========================
     if (!country_code || country_code === "all") {
       return res.json({
@@ -154,6 +154,9 @@ exports.getUsers = async (req, res) => {
       });
     }
 
+    // =========================
+    // JOIN QUERY (countries, regions)
+    // =========================
     let query = supabase
       .from("users")
       .select(
@@ -161,11 +164,20 @@ exports.getUsers = async (req, res) => {
         id,
         name,
         phone,
-        country_code,
-        region_code,
         role,
         is_active,
         created_at,
+
+        country:countries!users_country_code_fkey (
+          code,
+          name
+        ),
+
+        region:regions!users_region_code_fkey (
+          code,
+          name
+        ),
+
         device_tokens(token)
       `,
       )
@@ -173,7 +185,7 @@ exports.getUsers = async (req, res) => {
       .order("name", { ascending: true });
 
     // =========================
-    // 2. optional filters
+    // FILTERS
     // =========================
     if (region_code && region_code !== "all") {
       query = query.eq("region_code", region_code);
@@ -191,8 +203,23 @@ exports.getUsers = async (req, res) => {
 
     if (error) throw error;
 
+    // =========================
+    // FLATTEN RESULT
+    // =========================
     const result = data.map((u) => ({
-      ...u,
+      id: u.id,
+      name: u.name,
+      phone: u.phone,
+      role: u.role,
+      is_active: u.is_active,
+      created_at: u.created_at,
+
+      country_code: u.country?.code || null,
+      country_name: u.country?.name || null,
+
+      region_code: u.region?.code || null,
+      region_name: u.region?.name || null,
+
       fcm_token: u.device_tokens?.[0]?.token || null,
     }));
 
