@@ -54,6 +54,19 @@ const sendToDevice = async (payload) => {
       title: String(data.title || ""),
       body: String(data.body || ""),
       level: String(data.level || "3"),
+      type: String(data.level) != "3" ? "normal" : "emergency",
+    },
+
+    apns: {
+      headers: {
+        "apns-priority": "10",
+      },
+      payload: {
+        aps: {
+          sound: "default",
+          badge: 1,
+        },
+      },
     },
 
     android: {
