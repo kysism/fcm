@@ -5,8 +5,18 @@ const supabase = require("../services/supabaseService");
 // ===============================
 exports.register = async (req, res) => {
   try {
-    const { name, phone, country_code, region_code, role, token, device_os } =
-      req.body;
+    const {
+      name,
+      phone,
+      country_code,
+      region_code,
+      role,
+      token,
+      device_os,
+      device_model,
+      os_version,
+      app_version,
+    } = req.body;
 
     if (!name || !phone) {
       return res.status(400).json({
@@ -45,11 +55,18 @@ exports.register = async (req, res) => {
         {
           user_id: user.id,
           token,
+
           device_os: device_os || "unknown",
+          device_model: device_model || null,
+          os_version: os_version || null,
+          app_version: app_version || null,
+
           is_active: true,
           updated_at: new Date(),
         },
-        { onConflict: "token" },
+        {
+          onConflict: "token",
+        },
       );
 
       if (tokenError) throw tokenError;
