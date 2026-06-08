@@ -120,32 +120,52 @@
       const API = "https://fcm-61ns.onrender.com/api";
 
       // =========================
-      // GENERATE PASSWORD
+      // GENERATE PASSWORD (수정됨)
       // =========================
       async function generatePassword() {
-        const res = await fetch(`${API}/auth/generate`, {
-          method: "POST",
-        });
+        try {
+          const res = await fetch(`${API}/auth/generate`, {
+            method: "POST",
+          });
 
-        const json = await res.json();
+          const json = await res.json();
 
-        if (!json.success) {
-          alert("FAILED");
-          return;
+          // 🔥 핵심 추가: admin 존재 여부 체크
+          if (!json.success) {
+            if (json.message && json.message.includes("Admin")) {
+              document.getElementById("message").innerText =
+                "Admin이 등록되어 있지 않습니다. 먼저 Admin을 등록해주세요.";
+              alert("Admin not found. Please register Admin first.");
+            } else {
+              alert("FAILED");
+            }
+            return;
+          }
+
+          // admin 존재하지 않는 경우 명시 처리 (백엔드에서 내려주는 경우 대비)
+          if (json.adminExists === false) {
+            document.getElementById("message").innerText =
+              "Admin이 존재하지 않습니다. Admin 등록 후 다시 시도하세요.";
+            alert("Admin is not registered.");
+            return;
+          }
+
+          // 기존 세션 제거
+          sessionStorage.removeItem("koica_admin_password");
+
+          // 로그인 영역 표시
+          document.getElementById("loginArea").style.display = "block";
+
+          document.getElementById("message").innerText =
+            "Password has been sent to admin devices.";
+        } catch (err) {
+          console.error(err);
+          alert("Server error occurred.");
         }
-
-        // 기존 세션 제거
-        sessionStorage.removeItem("koica_admin_password");
-
-        // 로그인 영역 표시
-        document.getElementById("loginArea").style.display = "block";
-
-        document.getElementById("message").innerText =
-          "Password has been sent to admin devices.";
       }
 
       // =========================
-      // LOGIN
+      // LOGIN (변경 없음)
       // =========================
       async function login() {
         const password = document.getElementById("password").value;
