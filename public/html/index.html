@@ -212,7 +212,6 @@
           <option value="1">🔴 LEVEL 1</option>
           <option value="2">🟠 LEVEL 2</option>
           <option value="3">🟢 LEVEL 3</option>
-          <option value="4">🔵 LEVEL 4</option>
         </select>
 
         <button class="send-big" onclick="send()">🚨 SEND PUSH</button>
@@ -583,6 +582,13 @@
           selectAll.checked = false;
           selectAll.indeterminate = false;
         }
+
+        // 7. USER
+        const box = document.getElementById("userList");
+        const count = document.getElementById("countBox");
+
+        box.innerHTML = "";
+        count.innerText = `총 0명`;
       }
 
       function go(page) {
