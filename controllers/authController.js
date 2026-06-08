@@ -3,31 +3,29 @@ const crypto = require("crypto");
 const supabase = require("../services/supabaseService");
 const { sendToDevice } = require("../services/firebaseService");
 
-// ⚠️ 메모리 기반 (서버 재시작 시 초기화됨)
+// ⚠️ 메모리 저장 (서버 재시작 시 초기화됨)
 let currentPassword = null;
 
 // =========================
-// GENERATE PASSWORD
+// GENERATE PASSWORD (SAFE VERSION)
 // =========================
 exports.generatePassword = async (req, res) => {
   try {
-    // 1. admin 조회
-    const { data: admins, error } = await supabase
+    // 1. admin 목록 조회 (단순화 - relation 제거로 500 방지)
+    const { data: admins, error: adminError } = await supabase
       .from("users")
-      .select(
-        `
-          id,
-          name,
-          device_tokens (
-            token
-          )
-        `,
-      )
+      .select("id, name, role")
       .eq("role", "admin");
 
-    if (error) throw error;
+    if (adminError) {
+      console.error("SUPABASE ERROR:", adminError);
+      return res.status(500).json({
+        success: false,
+        message: "Database error",
+      });
+    }
 
-    // 2. 🔥 admin 존재 여부 체크 (핵심)
+    // 2. admin 없음 방어
     if (!admins || admins.length === 0) {
       return res.status(400).json({
         success: false,
@@ -36,39 +34,55 @@ exports.generatePassword = async (req, res) => {
       });
     }
 
-    // 3. 새 비밀번호 생성
+    // 3. 비밀번호 생성
     currentPassword = crypto.randomBytes(4).toString("hex");
 
     let sentCount = 0;
 
-    // 4. FCM 발송
+    // 4. admin별 token 안전 조회 + FCM 전송
     for (const admin of admins) {
-      const token = admin.device_tokens?.[0]?.token;
+      try {
+        const { data: tokens, error: tokenError } = await supabase
+          .from("device_tokens")
+          .select("token")
+          .eq("user_id", admin.id);
 
-      if (!token) continue;
+        if (tokenError) {
+          console.error("TOKEN ERROR:", tokenError);
+          continue;
+        }
 
-      await sendToDevice({
-        message: {
-          token,
-          data: {
-            title: "ADMIN PASSWORD",
-            body: `Password: ${currentPassword}`,
-            level: "3",
+        const token = tokens?.[0]?.token;
+
+        if (!token) continue;
+
+        await sendToDevice({
+          message: {
+            token,
+            data: {
+              title: "ADMIN PASSWORD",
+              body: `Password: ${currentPassword}`,
+              level: "3",
+            },
+            android: {
+              priority: "high",
+            },
           },
-          android: {
-            priority: "high",
-          },
-        },
-      });
+        });
 
-      sentCount++;
+        sentCount++;
+      } catch (err) {
+        // 🔥 한 admin 실패해도 전체 중단 안 함
+        console.error("FCM SEND ERROR:", err);
+        continue;
+      }
     }
 
-    // 5. 🔥 token 없는 경우 방어
+    // 5. token 없음 방어
     if (sentCount === 0) {
       return res.status(400).json({
         success: false,
-        message: "Admin은 존재하지만 device token이 없습니다.",
+        message: "Admin은 존재하지만 유효한 device token이 없습니다.",
       });
     }
 
@@ -76,20 +90,24 @@ exports.generatePassword = async (req, res) => {
       success: true,
     });
   } catch (err) {
+    console.error("GEN PASSWORD ERROR:", err);
+
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: "Internal server error",
+      detail: err.message,
     });
   }
 };
 
 // =========================
-// VERIFY PASSWORD
+// VERIFY PASSWORD (SAFE VERSION)
 // =========================
 exports.verifyPassword = async (req, res) => {
   try {
     const { password } = req.body;
 
+    // 1. 입력값 체크
     if (!password) {
       return res.status(400).json({
         success: false,
@@ -97,13 +115,19 @@ exports.verifyPassword = async (req, res) => {
       });
     }
 
-    // 1. admin 존재 체크
+    // 2. admin 존재 체크
     const { data: admins, error } = await supabase
       .from("users")
       .select("id")
       .eq("role", "admin");
 
-    if (error) throw error;
+    if (error) {
+      console.error("SUPABASE ERROR:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Database error",
+      });
+    }
 
     if (!admins || admins.length === 0) {
       return res.status(400).json({
@@ -112,7 +136,7 @@ exports.verifyPassword = async (req, res) => {
       });
     }
 
-    // 2. password 검증
+    // 3. password 검증 (메모리 기반)
     if (!currentPassword || password !== currentPassword) {
       return res.status(401).json({
         success: false,
@@ -120,14 +144,16 @@ exports.verifyPassword = async (req, res) => {
       });
     }
 
-    // 3. 성공
     return res.json({
       success: true,
     });
   } catch (err) {
+    console.error("VERIFY ERROR:", err);
+
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: "Internal server error",
+      detail: err.message,
     });
   }
 };
