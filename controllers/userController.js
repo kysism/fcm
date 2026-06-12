@@ -38,6 +38,10 @@ exports.register = async (req, res) => {
           region_code,
           role: role || "user",
           is_active: true,
+
+          // 🔥 추가
+          last_login: new Date(),
+
           updated_at: new Date(),
         },
         { onConflict: "phone" },
@@ -115,6 +119,9 @@ exports.getUserByPhone = async (req, res) => {
 // ===============================
 // GET USER BY TOKEN (JOIN USERS)
 // ===============================
+// ===============================
+// GET USER BY TOKEN (JOIN USERS)
+// ===============================
 exports.getUserByToken = async (req, res) => {
   try {
     const { token } = req.query;
@@ -140,6 +147,19 @@ exports.getUserByToken = async (req, res) => {
       .maybeSingle();
 
     if (error) throw error;
+
+    // =========================
+    // 🔥 LAST LOGIN UPDATE 추가
+    // =========================
+    if (data?.users?.id) {
+      await supabase
+        .from("users")
+        .update({
+          last_login: new Date(),
+          updated_at: new Date(),
+        })
+        .eq("id", data.users.id);
+    }
 
     return res.json({
       success: true,
