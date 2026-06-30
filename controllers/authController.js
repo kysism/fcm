@@ -3,7 +3,7 @@ const crypto = require("crypto");
 const supabase = require("../services/supabaseService");
 const { sendToDevice } = require("../services/firebaseService");
 
-// ⚠️ 메모리 저장 (서버 재시작 시 초기화됨)
+// 메모리 저장 (서버 재시작 시 초기화됨)
 let currentPassword = null;
 
 // =========================

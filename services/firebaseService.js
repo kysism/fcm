@@ -64,7 +64,6 @@ const sendToDevice = async (payload) => {
       payload: {
         aps: {
           sound: "default",
-          badge: 1,
         },
       },
     },

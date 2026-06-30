@@ -39,7 +39,7 @@ exports.register = async (req, res) => {
           role: role || "user",
           is_active: true,
 
-          // 🔥 추가
+          // 추가
           last_login: new Date(),
 
           updated_at: new Date(),
@@ -149,7 +149,7 @@ exports.getUserByToken = async (req, res) => {
     if (error) throw error;
 
     // =========================
-    // 🔥 LAST LOGIN UPDATE 추가
+    // LAST LOGIN UPDATE 추가
     // =========================
     if (data?.users?.id) {
       await supabase
