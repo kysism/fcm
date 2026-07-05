@@ -41,7 +41,7 @@ const sendToDevice = async (payload) => {
 
   const token = message.token;
   const data = message.data || {};
-  const response;
+  let response = null;
 
   try {
     response = await admin.messaging().send({
