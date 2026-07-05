@@ -41,37 +41,46 @@ const sendToDevice = async (payload) => {
 
   const token = message.token;
   const data = message.data || {};
+  const response;
 
-  return await admin.messaging().send({
-    token: token,
+  try {
+    response = await admin.messaging().send({
+      token: token,
 
-    notification: {
-      title: data.title,
-      body: data.body,
-    },
-
-    data: {
-      title: String(data.title || ""),
-      body: String(data.body || ""),
-      level: String(data.level || "3"),
-      type: String(data.level) != "3" ? "normal" : "emergency",
-    },
-
-    apns: {
-      headers: {
-        "apns-priority": "10",
+      notification: {
+        title: data.title,
+        body: data.body,
       },
-      payload: {
-        aps: {
-          sound: "default",
+
+      data: {
+        title: String(data.title || ""),
+        body: String(data.body || ""),
+        level: String(data.level || "3"),
+        type: String(data.level) != "3" ? "normal" : "emergency",
+      },
+
+      apns: {
+        headers: {
+          "apns-priority": "10",
+        },
+        payload: {
+          aps: {
+            sound: "default",
+          },
         },
       },
-    },
 
-    android: {
-      priority: "high",
-    },
-  });
+      android: {
+        priority: "high",
+      },
+    });
+
+    console.log(response);
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
 };
 
 // =============================
